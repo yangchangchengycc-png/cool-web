@@ -623,23 +623,7 @@ function initLightBeams() {
 }
 
 function initDust() {
-  const dustByTier = [100, 160, 130, 105];
-  const count = width < 768 ? 100 : dustByTier[perfTier] ?? 160;
   dustParticles = [];
-  for (let i = 0; i < count; i++) {
-    dustParticles.push({
-      x: Math.random(),
-      y: Math.random(),
-      z: Math.random(),
-      size: 0.35 + Math.random() * 1.8,
-      alpha: 0.18 + Math.random() * 0.42,
-      vx: (Math.random() - 0.5) * 0.00007,
-      vy: -0.000012 + Math.random() * 0.000055,
-      phase: Math.random() * Math.PI * 2,
-      twinkle: 0.75 + Math.random() * 1.5,
-      matte: Math.random() < 0.28,
-    });
-  }
 }
 
 function getBeamSource() {
@@ -735,6 +719,8 @@ function drawGodRays(time) {
 }
 
 function drawDust(time) {
+  if (!dustParticles.length) return;
+
   const w = canvas.width;
   const h = canvas.height;
   const skipMatte = perfTier >= 2;
@@ -1753,8 +1739,7 @@ function drawLightMap() {
   const w = canvas.width;
   const h = canvas.height;
   beginBufferDraw(lightRawCtx);
-  lightRawCtx.fillStyle = '#000000';
-  lightRawCtx.fillRect(0, 0, w, h);
+  lightRawCtx.clearRect(0, 0, w, h);
 
   lightRawCtx.globalCompositeOperation = 'lighter';
   forEachLightBlob((b, isCursor) => {
