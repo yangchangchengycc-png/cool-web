@@ -1,4 +1,4 @@
-# Komorebi Portfolio
+# cool-web
 
 斑驳树影（Komorebi）风格的个人作品集网站。纯静态页面，可直接部署到 GitHub Pages 在线访问。
 
