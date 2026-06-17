@@ -15,6 +15,7 @@ let bufferH = 0;
 let renderScale = 1;
 let perfTier = 1;
 let lightBrightBoost = 1;
+let renderFrame = 0;
 
 const mouse = { targetX: 0.5, targetY: 0.5 };
 const smoothMouse = { x: 0.5, y: 0.5 };
@@ -115,19 +116,19 @@ function updatePerfProfile() {
   if (width < 768) {
     perfTier = 0;
     renderScale = 1;
-    dpr = Math.min(rawDpr, 2);
+    dpr = Math.min(rawDpr, 1.5);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
     renderScale = 0.56;
-    dpr = Math.min(rawDpr, 1.25);
+    dpr = Math.min(rawDpr, 1.1);
   } else if (width >= 1400) {
     perfTier = 2;
     renderScale = 0.68;
-    dpr = Math.min(rawDpr, 1.5);
+    dpr = Math.min(rawDpr, 1.25);
   } else {
     perfTier = 1;
     renderScale = 0.82;
-    dpr = Math.min(rawDpr, 2);
+    dpr = Math.min(rawDpr, 1.35);
   }
 
   if (prefersReducedMotion) {
@@ -753,7 +754,7 @@ function drawDust(time) {
 }
 
 function drawTyndallEffect(time) {
-  drawGodRays(time);
+  if (renderFrame % 2 === 0) drawGodRays(time);
   updateDust(time);
 
   ctx.globalCompositeOperation = 'screen';
@@ -1806,6 +1807,7 @@ function drawMaskedText() {
 }
 
 function render(time) {
+  renderFrame += 1;
   const recentlyMoved = time - lastPointerMove < 120;
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
