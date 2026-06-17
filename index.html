@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio — 个人作品集</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+
+  <header class="header">
+    <div class="header__brand">
+      <span class="header__name">Your Name</span>
+      <span class="header__role">Designer & Developer</span>
+    </div>
+    <nav class="header__nav" aria-label="主导航">
+      <a href="#work">Work</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="main">
+    <section class="hero" id="work">
+      <p class="hero__hint">静观树影摇曳 · 移动鼠标追随光影</p>
+      <ul class="projects" id="projects" role="list">
+        <li class="project" data-index="0">
+          <a href="#" class="project__link">
+            <span class="project__title">Komorebi Studio</span>
+            <span class="project__meta">Brand Identity · 2025</span>
+          </a>
+        </li>
+        <li class="project" data-index="1">
+          <a href="#" class="project__link">
+            <span class="project__title">Silent Garden</span>
+            <span class="project__meta">Web Experience · 2024</span>
+          </a>
+        </li>
+        <li class="project" data-index="2">
+          <a href="#" class="project__link">
+            <span class="project__title">Paper & Light</span>
+            <span class="project__meta">Editorial Design · 2024</span>
+          </a>
+        </li>
+        <li class="project" data-index="3">
+          <a href="#" class="project__link">
+            <span class="project__title">Echo Chamber</span>
+            <span class="project__meta">Interactive Art · 2023</span>
+          </a>
+        </li>
+        <li class="project" data-index="4">
+          <a href="#" class="project__link">
+            <span class="project__title">Morning Ritual</span>
+            <span class="project__meta">Product Design · 2023</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="about" id="about">
+      <p>专注于数字体验与视觉叙事，在光与影之间寻找平衡。</p>
+    </section>
+
+    <section class="contact" id="contact">
+      <a href="mailto:hello@example.com">hello@example.com</a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="footer__sparkle" aria-hidden="true">✦</span>
+    <span class="footer__year">© 2025</span>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
