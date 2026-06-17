@@ -1,0 +1,94 @@
+.app {
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+}
+
+.card {
+  background: linear-gradient(160deg, #161d36, #0e1429);
+  border: 1px solid rgba(124, 156, 255, 0.18);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8aa6ff;
+  background: rgba(124, 156, 255, 0.12);
+  border: 1px solid rgba(124, 156, 255, 0.25);
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+}
+
+h1 {
+  margin: 1.2rem 0 0.4rem;
+  font-size: 2.6rem;
+  background: linear-gradient(90deg, #8aa6ff, #c7b3ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  margin: 0 0 2rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.count-value {
+  font-size: 3.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid rgba(124, 156, 255, 0.35);
+  background: rgba(124, 156, 255, 0.14);
+  color: #e8edff;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.7rem 1.4rem;
+  border-radius: 12px;
+  transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+button:hover {
+  background: rgba(124, 156, 255, 0.26);
+  border-color: rgba(124, 156, 255, 0.6);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.primary {
+  background: linear-gradient(90deg, #5b7cff, #8a6bff);
+  border-color: transparent;
+}
+
+button.primary:hover {
+  background: linear-gradient(90deg, #6d8bff, #9a7dff);
+}
+
+.footer {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+}
