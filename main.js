@@ -16,6 +16,9 @@ let renderScale = 1;
 let perfTier = 1;
 let lightBrightBoost = 1;
 let renderFrame = 0;
+let lastRenderAt = 0;
+
+const TARGET_FRAME_MS = 1000 / 40;
 
 const mouse = { targetX: 0.5, targetY: 0.5 };
 const smoothMouse = { x: 0.5, y: 0.5 };
@@ -115,20 +118,20 @@ function updatePerfProfile() {
 
   if (width < 768) {
     perfTier = 0;
-    renderScale = 1;
-    dpr = Math.min(rawDpr, 1.5);
+    renderScale = 0.88;
+    dpr = Math.min(rawDpr, 1.25);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.56;
-    dpr = Math.min(rawDpr, 1.1);
+    renderScale = 0.48;
+    dpr = Math.min(rawDpr, 1);
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.68;
-    dpr = Math.min(rawDpr, 1.25);
+    renderScale = 0.58;
+    dpr = Math.min(rawDpr, 1.08);
   } else {
     perfTier = 1;
-    renderScale = 0.82;
-    dpr = Math.min(rawDpr, 1.35);
+    renderScale = 0.68;
+    dpr = Math.min(rawDpr, 1.15);
   }
 
   if (prefersReducedMotion) {
@@ -262,10 +265,10 @@ function initBlobs() {
   blobs = [];
   const isMobile = width < 768;
   const largeScreen = width >= 1400;
-  const areaCap = perfTier >= 3 ? 1.1 : perfTier >= 2 ? 1.2 : 1.48;
+  const areaCap = perfTier >= 3 ? 0.85 : perfTier >= 2 ? 0.95 : 1.08;
   const areaScale = isMobile ? 1 : Math.min(areaCap, Math.sqrt((width * height) / (1920 * 1080)));
 
-  const lightCount = Math.round((isMobile ? 42 : 68) * areaScale);
+  const lightCount = Math.round((isMobile ? 32 : 46) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     const radius = pickLightRadius();
     let baseX;
@@ -398,7 +401,7 @@ function initBlobs() {
     });
   }
 
-  const edgeCount = isMobile ? 14 : (largeScreen ? (perfTier >= 3 ? 18 : 22) : 18);
+  const edgeCount = isMobile ? 10 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
   for (let i = 0; i < edgeCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (largeScreen ? 1.14 : 1);
@@ -442,7 +445,7 @@ function initBlobs() {
     });
   }
 
-  const bleedCount = isMobile ? 7 : (largeScreen ? (perfTier >= 3 ? 11 : 13) : 11);
+  const bleedCount = isMobile ? 5 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
   for (let i = 0; i < bleedCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (105 + Math.random() * 95) * LIGHT_SIZE_SCALE * (largeScreen ? 1.22 : 1);
@@ -495,7 +498,7 @@ function initGapPatches() {
   const isMobile = width < 768;
   const maxDist = isMobile ? 210 : 270;
   const minDist = 26;
-  const maxGapPatches = perfTier >= 3 ? 160 : perfTier >= 2 ? 240 : 420;
+  const maxGapPatches = perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -522,8 +525,8 @@ function initGapPatches() {
 function initFoliage() {
   foliage = [];
   const isMobile = width < 768;
-  const foliageByTier = [28, 40, 34, 30];
-  const foliageCount = isMobile ? 28 : foliageByTier[perfTier] ?? 40;
+  const foliageByTier = [20, 28, 24, 22];
+  const foliageCount = isMobile ? 20 : foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
     const scale = 0.65 + Math.random() * 1.05;
@@ -754,7 +757,7 @@ function drawDust(time) {
 }
 
 function drawTyndallEffect(time) {
-  if (renderFrame % 2 === 0) drawGodRays(time);
+  if (renderFrame % 3 === 0) drawGodRays(time);
   updateDust(time);
 
   ctx.globalCompositeOperation = 'screen';
@@ -1807,6 +1810,12 @@ function drawMaskedText() {
 }
 
 function render(time) {
+  if (time - lastRenderAt < TARGET_FRAME_MS) {
+    requestAnimationFrame(render);
+    return;
+  }
+
+  lastRenderAt = time;
   renderFrame += 1;
   const recentlyMoved = time - lastPointerMove < 120;
 
