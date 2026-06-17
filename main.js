@@ -89,9 +89,9 @@ const LIGHT_SIZE_SCALE = 1.18;
 const CLUSTER_AREA_SCALE = 0.8;
 
 const cursorLight = {
-  radius: 120 * LIGHT_SIZE_SCALE,
-  baseRadius: 120 * LIGHT_SIZE_SCALE,
-  strength: 1.18,
+  radius: 170 * LIGHT_SIZE_SCALE,
+  baseRadius: 170 * LIGHT_SIZE_SCALE,
+  strength: 1.65,
   renderX: 0,
   renderY: 0,
   renderRx: 1,
@@ -880,7 +880,7 @@ function resize() {
   if (!grainPattern) initGrain();
   if (!frostPattern) initFrostGrain();
   const isMobile = width < 768;
-  cursorLight.radius = (isMobile ? 100 : 130) * LIGHT_SIZE_SCALE;
+  cursorLight.radius = (isMobile ? 135 : 190) * LIGHT_SIZE_SCALE;
   cursorLight.baseRadius = cursorLight.radius;
   cursorLight.renderRadius = cursorLight.radius;
   initBlobs();
@@ -1727,7 +1727,7 @@ function drawLightBokehLayer() {
   lightBokehRawCtx.globalCompositeOperation = 'lighter';
   forEachLightBlob((b, isCursor) => {
     let scale = 1.38;
-    if (isCursor) scale = 1.9;
+    if (isCursor) scale = 2.55;
     else if (b.heroLight) scale = 1.54;
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.48 + (b.mergeFactor ?? 0) * 0.18;
     drawLightBlob(lightBokehRawCtx, b, scale);
@@ -1748,7 +1748,7 @@ function drawLightMap() {
   lightRawCtx.globalCompositeOperation = 'lighter';
   forEachLightBlob((b, isCursor) => {
     let scale = 1.42;
-    if (isCursor) scale = 1.95;
+    if (isCursor) scale = 2.65;
     else if (b.heroLight) scale = 1.58;
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.5 + (b.mergeFactor ?? 0) * 0.16;
     drawLightBlob(lightRawCtx, b, scale);
