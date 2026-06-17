@@ -91,7 +91,7 @@ const CLUSTER_AREA_SCALE = 0.8;
 const cursorLight = {
   radius: 120 * LIGHT_SIZE_SCALE,
   baseRadius: 120 * LIGHT_SIZE_SCALE,
-  strength: 0.82,
+  strength: 1.18,
   renderX: 0,
   renderY: 0,
   renderRx: 1,
@@ -1727,7 +1727,7 @@ function drawLightBokehLayer() {
   lightBokehRawCtx.globalCompositeOperation = 'lighter';
   forEachLightBlob((b, isCursor) => {
     let scale = 1.38;
-    if (isCursor) scale = 1.5;
+    if (isCursor) scale = 1.9;
     else if (b.heroLight) scale = 1.54;
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.48 + (b.mergeFactor ?? 0) * 0.18;
     drawLightBlob(lightBokehRawCtx, b, scale);
@@ -1748,7 +1748,7 @@ function drawLightMap() {
   lightRawCtx.globalCompositeOperation = 'lighter';
   forEachLightBlob((b, isCursor) => {
     let scale = 1.42;
-    if (isCursor) scale = 1.55;
+    if (isCursor) scale = 1.95;
     else if (b.heroLight) scale = 1.58;
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.5 + (b.mergeFactor ?? 0) * 0.16;
     drawLightBlob(lightRawCtx, b, scale);
