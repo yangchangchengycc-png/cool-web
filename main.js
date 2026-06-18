@@ -87,6 +87,7 @@ const SUN_ANGLE = Math.PI * 0.75;
 const PERSP_SKEW = -0.28;
 const LIGHT_SIZE_SCALE = 1.18;
 const CLUSTER_AREA_SCALE = 0.8;
+const MOBILE_BREAKPOINT = 768;
 
 const cursorLight = {
   radius: 170 * LIGHT_SIZE_SCALE,
@@ -116,7 +117,7 @@ function updatePerfProfile() {
   const rawDpr = window.devicePixelRatio || 1;
   const megaPx = (width * height) / 1e6;
 
-  if (width < 768) {
+  if (width < MOBILE_BREAKPOINT) {
     perfTier = 0;
     renderScale = 0.72;
     dpr = Math.min(rawDpr, 1.1);
@@ -1725,6 +1726,7 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
 }
 
 function drawShadowLayer() {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const w = canvas.width;
   const h = canvas.height;
   beginBufferDraw(shadowRawCtx);
@@ -1738,15 +1740,16 @@ function drawShadowLayer() {
   }
 
   shadowRawCtx.globalCompositeOperation = 'destination-out';
-  forEachLightBlob((b) => drawLightCutout(shadowRawCtx, b, 1.08, 1.04));
+  forEachLightBlob((b) => drawLightCutout(shadowRawCtx, b, isMobile ? 1.22 : 1.08, isMobile ? 1.16 : 1.04));
   shadowRawCtx.globalCompositeOperation = 'source-over';
 
   applyOrganicShadowEdgeBlend(shadowRawCtx);
   endBufferDraw(shadowRawCtx);
-  blurPass(shadowRawCanvas, shadowCtx, shadowCanvas, BLUR_SHADOW);
+  blurPass(shadowRawCanvas, shadowCtx, shadowCanvas, isMobile ? BLUR_SHADOW * 1.25 : BLUR_SHADOW);
 }
 
 function drawLightBokehLayer() {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const w = canvas.width;
   const h = canvas.height;
   beginBufferDraw(lightBokehRawCtx);
@@ -1762,11 +1765,12 @@ function drawLightBokehLayer() {
   drawClusterGlows(lightBokehRawCtx);
   lightBokehRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightBokehRawCtx);
-  const bokehBright = 1.1 + (1 - renderScale) * 0.28;
-  blurPass(lightBokehRawCanvas, lightBokehCtx, lightBokehCanvas, BLUR_LIGHT, `brightness(${bokehBright})`);
+  const bokehBright = isMobile ? 1.04 : 1.1 + (1 - renderScale) * 0.28;
+  blurPass(lightBokehRawCanvas, lightBokehCtx, lightBokehCanvas, isMobile ? BLUR_LIGHT * 1.18 : BLUR_LIGHT, `brightness(${bokehBright})`);
 }
 
 function drawLightMap() {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const w = canvas.width;
   const h = canvas.height;
   beginBufferDraw(lightRawCtx);
@@ -1784,10 +1788,14 @@ function drawLightMap() {
   lightRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightRawCtx);
 
-  blurPass(lightRawCanvas, lightCtx, lightCanvas, BLUR_MASK, `brightness(${1.14 + (1 - renderScale) * 0.12}) contrast(3.8)`);
+  const maskFilter = isMobile
+    ? `brightness(${1.02 + (1 - renderScale) * 0.08}) contrast(2.15)`
+    : `brightness(${1.14 + (1 - renderScale) * 0.12}) contrast(3.8)`;
+  blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.32 : BLUR_MASK, maskFilter);
 }
 
 function drawWall() {
+  const isMobile = width < MOBILE_BREAKPOINT;
   wallCtx.fillStyle = WALL;
   wallCtx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1799,17 +1807,17 @@ function drawWall() {
   }
 
   wallCtx.globalCompositeOperation = 'multiply';
-  wallCtx.globalAlpha = 0.78;
+  wallCtx.globalAlpha = isMobile ? 0.58 : 0.78;
   wallCtx.drawImage(shadowCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
   wallCtx.globalCompositeOperation = 'screen';
-  wallCtx.globalAlpha = Math.min(0.94 * lightBrightBoost, 1);
+  wallCtx.globalAlpha = isMobile ? 0.72 : Math.min(0.94 * lightBrightBoost, 1);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
   wallCtx.globalCompositeOperation = 'lighter';
-  wallCtx.globalAlpha = Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
+  wallCtx.globalAlpha = isMobile ? 0.08 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
   wallCtx.globalCompositeOperation = 'source-over';
