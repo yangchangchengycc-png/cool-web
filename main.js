@@ -18,7 +18,7 @@ let lightBrightBoost = 1;
 let renderFrame = 0;
 let lastRenderAt = 0;
 
-const TARGET_FRAME_MS = 1000 / 40;
+const MOBILE_TARGET_FRAME_MS = 1000 / 40;
 
 const mouse = { targetX: 0.5, targetY: 0.5 };
 const smoothMouse = { x: 0.5, y: 0.5 };
@@ -2032,7 +2032,8 @@ function renderMobileScene(time) {
 }
 
 function render(time) {
-  if (time - lastRenderAt < TARGET_FRAME_MS) {
+  const targetFrameMs = width < MOBILE_BREAKPOINT ? MOBILE_TARGET_FRAME_MS : 0;
+  if (targetFrameMs && time - lastRenderAt < targetFrameMs) {
     requestAnimationFrame(render);
     return;
   }
