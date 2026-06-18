@@ -275,7 +275,7 @@ function initBlobs() {
   const mobileAreaScale = Math.min(1, Math.sqrt((width * height) / (390 * 844)));
   const areaScale = isMobile ? mobileAreaScale : Math.min(areaCap, Math.sqrt((width * height) / (1920 * 1080)));
 
-  const lightCount = Math.round((isMobile ? 22 : 46) * areaScale);
+  const lightCount = Math.round((isMobile ? 14 : 46) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
     if (isMobile) radius *= 0.72 + Math.random() * 0.32;
@@ -366,7 +366,7 @@ function initBlobs() {
   ];
 
   const activeHeroProfiles = isMobile ? mobileHeroProfiles : heroProfiles;
-  const heroLightCount = isMobile ? 3 : 3 + Math.floor(Math.random() * 3);
+  const heroLightCount = isMobile ? 1 + Math.floor(Math.random() * 3) : 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < heroLightCount; i++) {
     const p = activeHeroProfiles[i % activeHeroProfiles.length];
     const anchorNormX = isMobile ? 0.12 + Math.random() * 0.76 : 0.18 + Math.random() * 0.64;
@@ -420,7 +420,7 @@ function initBlobs() {
     });
   }
 
-  const edgeCount = isMobile ? 6 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
+  const edgeCount = isMobile ? 4 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
   for (let i = 0; i < edgeCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (largeScreen ? 1.14 : 1);
@@ -464,7 +464,7 @@ function initBlobs() {
     });
   }
 
-  const bleedCount = isMobile ? 3 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
+  const bleedCount = isMobile ? 2 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
   for (let i = 0; i < bleedCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (105 + Math.random() * 95) * LIGHT_SIZE_SCALE * (largeScreen ? 1.22 : 1);
@@ -1513,18 +1513,23 @@ function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
 
   const grad = targetCtx.createRadialGradient(
     cx, cy, radius * 0.02 * rs,
-    cx * 0.12, cy * 0.12, radius * 1.16 * rs
+    cx * 0.12, cy * 0.12, radius * (isMobile ? 1.85 : 1.16) * rs
   );
-  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.76 : 1.05), 1)})`);
-  grad.addColorStop(isMobile ? 0.3 : 0.22, `rgba(255,255,255,${a * (isMobile ? 0.56 : 0.78)})`);
-  grad.addColorStop(isMobile ? 0.62 : 0.5, `rgba(255,255,255,${a * (isMobile ? 0.24 : 0.38)})`);
-  grad.addColorStop(isMobile ? 0.86 : 0.76, `rgba(255,255,255,${a * (isMobile ? 0.06 : 0.12)})`);
+  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.54 : 1.05), 1)})`);
+  grad.addColorStop(isMobile ? 0.36 : 0.22, `rgba(255,255,255,${a * (isMobile ? 0.34 : 0.78)})`);
+  grad.addColorStop(isMobile ? 0.68 : 0.5, `rgba(255,255,255,${a * (isMobile ? 0.13 : 0.38)})`);
+  grad.addColorStop(isMobile ? 0.9 : 0.76, `rgba(255,255,255,${a * (isMobile ? 0.03 : 0.12)})`);
   grad.addColorStop(1, 'rgba(255,255,255,0)');
 
-  targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius * rs, radius * round * rs, 0, 0, Math.PI * 2);
   targetCtx.fillStyle = grad;
-  targetCtx.fill();
+  if (isMobile) {
+    const fillSize = radius * rs * 3.8;
+    targetCtx.fillRect(-fillSize, -fillSize, fillSize * 2, fillSize * 2);
+  } else {
+    targetCtx.beginPath();
+    targetCtx.ellipse(0, 0, radius * rs, radius * round * rs, 0, 0, Math.PI * 2);
+    targetCtx.fill();
+  }
   targetCtx.restore();
 }
 
@@ -1661,23 +1666,28 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
 
   const grad = targetCtx.createRadialGradient(
     cx, cy, radius * 0.01,
-    cx * 0.12, cy * 0.12, radius * 1.12
+    cx * 0.12, cy * 0.12, radius * (isMobile ? 1.72 : 1.12)
   );
-  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * 1.18, 1)})`);
-  grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * 1.05, 1)})`);
-  grad.addColorStop(0.18, `rgba(255,252,245,${a * 0.86})`);
-  grad.addColorStop(0.34, `rgba(${r},${g},${bv},${a * 0.58})`);
-  grad.addColorStop(0.5, `rgba(${r},${g},${bv},${a * 0.36})`);
-  grad.addColorStop(0.66, `rgba(${r},${g},${bv},${a * 0.17})`);
-  grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * 0.05})`);
+  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.74 : 1.18), 1)})`);
+  grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * (isMobile ? 0.58 : 1.05), 1)})`);
+  grad.addColorStop(isMobile ? 0.24 : 0.18, `rgba(255,252,245,${a * (isMobile ? 0.36 : 0.86)})`);
+  grad.addColorStop(isMobile ? 0.44 : 0.34, `rgba(${r},${g},${bv},${a * (isMobile ? 0.22 : 0.58)})`);
+  grad.addColorStop(isMobile ? 0.64 : 0.5, `rgba(${r},${g},${bv},${a * (isMobile ? 0.12 : 0.36)})`);
+  grad.addColorStop(isMobile ? 0.82 : 0.66, `rgba(${r},${g},${bv},${a * (isMobile ? 0.04 : 0.17)})`);
+  if (!isMobile) grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * 0.05})`);
   grad.addColorStop(1, `rgba(${r},${g},${bv},0)`);
 
   targetCtx.globalCompositeOperation = 'source-over';
 
-  targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
   targetCtx.fillStyle = grad;
-  targetCtx.fill();
+  if (isMobile) {
+    const fillSize = radius * 3.6;
+    targetCtx.fillRect(-fillSize, -fillSize, fillSize * 2, fillSize * 2);
+  } else {
+    targetCtx.beginPath();
+    targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
+    targetCtx.fill();
+  }
 
   if (!isMobile) {
     const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
@@ -1690,38 +1700,40 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
     targetCtx.stroke();
   }
 
-  targetCtx.save();
-  targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
-  targetCtx.clip();
+  if (!isMobile) {
+    targetCtx.save();
+    targetCtx.beginPath();
+    targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
+    targetCtx.clip();
 
-  const fade = targetCtx.createLinearGradient(
-    -radius * 0.5, -radius * 0.32,
-    radius * 0.58, radius * 0.38
-  );
-  fade.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.55, 1)})`);
-  fade.addColorStop(0.28, `rgba(255,253,248,${a * 0.22})`);
-  fade.addColorStop(0.55, `rgba(${r},${g},${bv},${a * 0.08})`);
-  fade.addColorStop(0.8, `rgba(${r},${g},${bv},${a * 0.025})`);
-  fade.addColorStop(1, `rgba(${r},${g},${bv},0)`);
+    const fade = targetCtx.createLinearGradient(
+      -radius * 0.5, -radius * 0.32,
+      radius * 0.58, radius * 0.38
+    );
+    fade.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.55, 1)})`);
+    fade.addColorStop(0.28, `rgba(255,253,248,${a * 0.22})`);
+    fade.addColorStop(0.55, `rgba(${r},${g},${bv},${a * 0.08})`);
+    fade.addColorStop(0.8, `rgba(${r},${g},${bv},${a * 0.025})`);
+    fade.addColorStop(1, `rgba(${r},${g},${bv},0)`);
 
-  targetCtx.globalCompositeOperation = 'lighter';
-  targetCtx.fillStyle = fade;
-  targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
+    targetCtx.globalCompositeOperation = 'lighter';
+    targetCtx.fillStyle = fade;
+    targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
 
-  const toneMask = targetCtx.createLinearGradient(
-    -radius * 0.45, -radius * 0.28,
-    radius * 0.55, radius * 0.36
-  );
-  toneMask.addColorStop(0, 'rgba(255,255,255,1)');
-  toneMask.addColorStop(0.4, 'rgba(255,255,255,0.88)');
-  toneMask.addColorStop(0.68, 'rgba(255,255,255,0.55)');
-  toneMask.addColorStop(1, 'rgba(255,255,255,0.22)');
+    const toneMask = targetCtx.createLinearGradient(
+      -radius * 0.45, -radius * 0.28,
+      radius * 0.55, radius * 0.36
+    );
+    toneMask.addColorStop(0, 'rgba(255,255,255,1)');
+    toneMask.addColorStop(0.4, 'rgba(255,255,255,0.88)');
+    toneMask.addColorStop(0.68, 'rgba(255,255,255,0.55)');
+    toneMask.addColorStop(1, 'rgba(255,255,255,0.22)');
 
-  targetCtx.globalCompositeOperation = 'destination-in';
-  targetCtx.fillStyle = toneMask;
-  targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
-  targetCtx.restore();
+    targetCtx.globalCompositeOperation = 'destination-in';
+    targetCtx.fillStyle = toneMask;
+    targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
+    targetCtx.restore();
+  }
 
   targetCtx.restore();
 }
