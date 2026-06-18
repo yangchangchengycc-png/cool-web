@@ -278,7 +278,7 @@ function initBlobs() {
   const mobileAreaScale = Math.min(1, Math.sqrt((width * height) / (390 * 844)));
   const areaScale = isMobile ? mobileAreaScale : Math.min(areaCap, Math.sqrt((width * height) / (1920 * 1080)));
 
-  const lightCount = Math.round((isMobile ? 14 : 46) * areaScale);
+  const lightCount = isMobile ? 3 + Math.floor(Math.random() * 2) : Math.round(46 * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
     if (isMobile) radius *= MOBILE_DESKTOP_CROP_SCALE;
@@ -363,7 +363,7 @@ function initBlobs() {
     { rMin: 132, rMax: 188, exMin: 0.95, exMax: 1.55, eyMin: 0.2, eyMax: 0.34, roundMin: 0.48, roundMax: 0.68 },
   ];
   const activeHeroProfiles = heroProfiles;
-  const heroLightCount = 3 + Math.floor(Math.random() * 3);
+  const heroLightCount = isMobile ? 1 : 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < heroLightCount; i++) {
     const p = activeHeroProfiles[i % activeHeroProfiles.length];
     const anchorNormX = 0.18 + Math.random() * 0.64;
@@ -417,7 +417,7 @@ function initBlobs() {
     });
   }
 
-  const edgeCount = isMobile ? 4 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
+  const edgeCount = isMobile ? 0 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
   for (let i = 0; i < edgeCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.14 : 1));
@@ -461,7 +461,7 @@ function initBlobs() {
     });
   }
 
-  const bleedCount = isMobile ? 2 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
+  const bleedCount = isMobile ? 0 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
   for (let i = 0; i < bleedCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (105 + Math.random() * 95) * LIGHT_SIZE_SCALE * (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.22 : 1));
