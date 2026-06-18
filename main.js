@@ -90,6 +90,7 @@ const MOBILE_PERSP_SKEW = -0.08;
 const LIGHT_SIZE_SCALE = 1.18;
 const CLUSTER_AREA_SCALE = 0.8;
 const MOBILE_BREAKPOINT = 768;
+const MOBILE_DESKTOP_CROP_SCALE = 0.8;
 
 const cursorLight = {
   radius: 170 * LIGHT_SIZE_SCALE,
@@ -280,7 +281,7 @@ function initBlobs() {
   const lightCount = Math.round((isMobile ? 14 : 46) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
-    if (isMobile) radius *= 0.78 + Math.random() * 0.28;
+    if (isMobile) radius *= MOBILE_DESKTOP_CROP_SCALE;
     let baseX;
     let baseY;
     const zone = Math.random();
@@ -307,10 +308,6 @@ function initBlobs() {
       baseY = Math.random() * height;
     }
     const shape = pickLightEllipse();
-    if (isMobile) {
-      shape.ellipseX = Math.min(shape.ellipseX * 0.56, 1.08);
-      shape.ellipseY = Math.min(shape.ellipseY * 1.18, 0.64);
-    }
 
     const blob = {
       type: 'light',
@@ -322,7 +319,7 @@ function initBlobs() {
       ellipseX: shape.ellipseX,
       ellipseY: shape.ellipseY,
       ellipseRound: shape.ellipseRound,
-      tiltVariation: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.22),
+      tiltVariation: (Math.random() - 0.5) * 0.22,
       rx: 0.88 + Math.random() * 0.24,
       ry: 0.88 + Math.random() * 0.24,
       strength: 0.34 + Math.random() * 0.48,
@@ -365,23 +362,17 @@ function initBlobs() {
     { rMin: 98, rMax: 142, exMin: 1.65, exMax: 2.35, eyMin: 0.1, eyMax: 0.18, roundMin: 0.34, roundMax: 0.44 },
     { rMin: 132, rMax: 188, exMin: 0.95, exMax: 1.55, eyMin: 0.2, eyMax: 0.34, roundMin: 0.48, roundMax: 0.68 },
   ];
-  const mobileHeroProfiles = [
-    { rMin: 150, rMax: 205, exMin: 0.82, exMax: 1.12, eyMin: 0.36, eyMax: 0.52, roundMin: 0.66, roundMax: 0.84 },
-    { rMin: 120, rMax: 176, exMin: 0.96, exMax: 1.26, eyMin: 0.24, eyMax: 0.36, roundMin: 0.42, roundMax: 0.58 },
-    { rMin: 138, rMax: 190, exMin: 0.82, exMax: 1.08, eyMin: 0.32, eyMax: 0.48, roundMin: 0.58, roundMax: 0.76 },
-  ];
-
-  const activeHeroProfiles = isMobile ? mobileHeroProfiles : heroProfiles;
-  const heroLightCount = isMobile ? 1 + Math.floor(Math.random() * 3) : 3 + Math.floor(Math.random() * 3);
+  const activeHeroProfiles = heroProfiles;
+  const heroLightCount = 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < heroLightCount; i++) {
     const p = activeHeroProfiles[i % activeHeroProfiles.length];
-    const anchorNormX = isMobile ? 0.12 + Math.random() * 0.76 : 0.18 + Math.random() * 0.64;
-    const anchorNormY = isMobile ? 0.16 + Math.random() * (isPortrait ? 0.62 : 0.5) : 0.18 + Math.random() * 0.64;
+    const anchorNormX = 0.18 + Math.random() * 0.64;
+    const anchorNormY = 0.18 + Math.random() * 0.64;
     const radius =
       (p.rMin + Math.random() * (p.rMax - p.rMin)) *
       LIGHT_SIZE_SCALE *
       1.15 *
-      (isMobile ? (isPortrait ? 0.78 : 0.9) : (largeScreen ? 1.08 : 1));
+      (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.08 : 1));
     blobs.push({
       type: 'light',
       heroLight: true,
@@ -398,7 +389,7 @@ function initBlobs() {
       ellipseX: p.exMin + Math.random() * (p.exMax - p.exMin),
       ellipseY: p.eyMin + Math.random() * (p.eyMax - p.eyMin),
       ellipseRound: p.roundMin + Math.random() * (p.roundMax - p.roundMin),
-      tiltVariation: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.24),
+      tiltVariation: (Math.random() - 0.5) * 0.24,
       rx: 0.94 + Math.random() * 0.2,
       ry: 0.94 + Math.random() * 0.2,
       strength: 0.92 + Math.random() * 0.22,
@@ -429,7 +420,7 @@ function initBlobs() {
   const edgeCount = isMobile ? 4 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
   for (let i = 0; i < edgeCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
-    const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (largeScreen ? 1.14 : 1);
+    const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.14 : 1));
     const shape = pickLightEllipse();
     blobs.push({
       type: 'light',
@@ -473,7 +464,7 @@ function initBlobs() {
   const bleedCount = isMobile ? 2 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
   for (let i = 0; i < bleedCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
-    const radius = (105 + Math.random() * 95) * LIGHT_SIZE_SCALE * (largeScreen ? 1.22 : 1);
+    const radius = (105 + Math.random() * 95) * LIGHT_SIZE_SCALE * (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.22 : 1));
     const shape = pickLightEllipse();
     blobs.push({
       type: 'light',
@@ -985,7 +976,6 @@ function getGapShadowColor(patch) {
 }
 
 function drawGapPatch(targetCtx, blobA, blobB, patch) {
-  const isMobile = width < MOBILE_BREAKPOINT;
   const dx = blobB.renderX - blobA.renderX;
   const dy = blobB.renderY - blobA.renderY;
   const dist = Math.hypot(dx, dy);
@@ -998,41 +988,22 @@ function drawGapPatch(targetCtx, blobA, blobB, patch) {
   const rA = (blobA.renderRadius ?? blobA.radius) * dpr;
   const rB = (blobB.renderRadius ?? blobB.radius) * dpr;
   const avgR = (rA + rB) * 0.5;
-  const rad =
-    (dist * (isMobile ? 0.3 : 0.36) + avgR * (isMobile ? 0.34 : 0.48)) *
-    (patch.sizeScale ?? 0.75);
+  const rad = (dist * 0.36 + avgR * 0.48) * (patch.sizeScale ?? 0.75);
   const color = getGapShadowColor(patch);
   const a = patch.depth ?? 0.55;
 
   targetCtx.save();
   targetCtx.translate(mx, my);
   targetCtx.rotate(Math.atan2(dy, dx));
+  targetCtx.scale(1, patch.aspect ?? 0.8);
 
-  if (isMobile) {
-    const length = rad * 2.5;
-    const halfWidth = Math.max(5 * dpr, rad * 0.16);
-    const grad = targetCtx.createLinearGradient(0, -halfWidth, 0, halfWidth);
-    grad.addColorStop(0, `rgba(${color.r},${color.g},${color.b},0)`);
-    grad.addColorStop(0.3, `rgba(${color.r},${color.g},${color.b},${a * 0.24})`);
-    grad.addColorStop(0.5, `rgba(${color.r},${color.g},${color.b},${Math.min(a * 0.52, 0.44)})`);
-    grad.addColorStop(0.7, `rgba(${color.r},${color.g},${color.b},${a * 0.24})`);
-    grad.addColorStop(1, `rgba(${color.r},${color.g},${color.b},0)`);
-    targetCtx.filter = `blur(${Math.max(2, rad * 0.045)}px)`;
-    targetCtx.fillStyle = grad;
-    targetCtx.beginPath();
-    targetCtx.ellipse(0, 0, length, halfWidth, 0, 0, Math.PI * 2);
-    targetCtx.fill();
-    targetCtx.filter = 'none';
-  } else {
-    targetCtx.scale(1, patch.aspect ?? 0.8);
-    const grad = targetCtx.createRadialGradient(0, 0, rad * 0.06, 0, 0, rad);
-    grad.addColorStop(0, `rgba(${color.r},${color.g},${color.b},${Math.min(a * 1.02, 0.92)})`);
-    grad.addColorStop(0.4, `rgba(${color.r},${color.g},${color.b},${a * 0.62})`);
-    grad.addColorStop(0.72, `rgba(${color.r},${color.g},${color.b},${a * 0.26})`);
-    grad.addColorStop(1, `rgba(${color.r},${color.g},${color.b},0)`);
-    targetCtx.fillStyle = grad;
-    targetCtx.fillRect(-rad * 1.25, -rad * 1.25, rad * 2.5, rad * 2.5);
-  }
+  const grad = targetCtx.createRadialGradient(0, 0, rad * 0.06, 0, 0, rad);
+  grad.addColorStop(0, `rgba(${color.r},${color.g},${color.b},${Math.min(a * 1.02, 0.92)})`);
+  grad.addColorStop(0.4, `rgba(${color.r},${color.g},${color.b},${a * 0.62})`);
+  grad.addColorStop(0.72, `rgba(${color.r},${color.g},${color.b},${a * 0.26})`);
+  grad.addColorStop(1, `rgba(${color.r},${color.g},${color.b},0)`);
+  targetCtx.fillStyle = grad;
+  targetCtx.fillRect(-rad * 1.25, -rad * 1.25, rad * 2.5, rad * 2.5);
   targetCtx.restore();
 }
 
@@ -1518,19 +1489,18 @@ function drawShadowShape(targetCtx, b, color, alphaScale = 1) {
 }
 
 function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
-  const isMobile = width < MOBILE_BREAKPOINT;
   const radius = (b.renderRadius ?? b.radius) * dpr;
-  const tilt = (isMobile ? MOBILE_SUN_ANGLE : SUN_ANGLE) + (b.tiltVariation ?? 0);
+  const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
-  const a = Math.min(b.strength * alphaScale * (isMobile ? 0.72 : 1), isMobile ? 0.72 : 1.2);
+  const a = Math.min(b.strength * alphaScale, 1.2);
   const rs = radiusScale;
 
   targetCtx.save();
   targetCtx.translate(b.renderX, b.renderY);
   targetCtx.rotate(tilt);
-  targetCtx.transform(1, 0, isMobile ? MOBILE_PERSP_SKEW : PERSP_SKEW, isMobile ? 0.9 : 0.84, 0, radius * 0.05);
+  targetCtx.transform(1, 0, PERSP_SKEW, 0.84, 0, radius * 0.05);
   targetCtx.scale(ex, ey);
 
   const cx = -radius * 0.24;
@@ -1538,23 +1508,18 @@ function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
 
   const grad = targetCtx.createRadialGradient(
     cx, cy, radius * 0.02 * rs,
-    cx * 0.12, cy * 0.12, radius * (isMobile ? 1.32 : 1.16) * rs
+    cx * 0.12, cy * 0.12, radius * 1.16 * rs
   );
-  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.68 : 1.05), 1)})`);
-  grad.addColorStop(isMobile ? 0.28 : 0.22, `rgba(255,255,255,${a * (isMobile ? 0.46 : 0.78)})`);
-  grad.addColorStop(isMobile ? 0.58 : 0.5, `rgba(255,255,255,${a * (isMobile ? 0.18 : 0.38)})`);
-  grad.addColorStop(isMobile ? 0.84 : 0.76, `rgba(255,255,255,${a * (isMobile ? 0.04 : 0.12)})`);
+  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * 1.05, 1)})`);
+  grad.addColorStop(0.22, `rgba(255,255,255,${a * 0.78})`);
+  grad.addColorStop(0.5, `rgba(255,255,255,${a * 0.38})`);
+  grad.addColorStop(0.76, `rgba(255,255,255,${a * 0.12})`);
   grad.addColorStop(1, 'rgba(255,255,255,0)');
 
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, radius * rs, radius * round * rs, 0, 0, Math.PI * 2);
   targetCtx.fillStyle = grad;
-  if (isMobile) {
-    const fillSize = radius * rs * 2.75;
-    targetCtx.fillRect(-fillSize, -fillSize, fillSize * 2, fillSize * 2);
-  } else {
-    targetCtx.beginPath();
-    targetCtx.ellipse(0, 0, radius * rs, radius * round * rs, 0, 0, Math.PI * 2);
-    targetCtx.fill();
-  }
+  targetCtx.fill();
   targetCtx.restore();
 }
 
@@ -1657,33 +1622,27 @@ function drawGapShadowBoost(targetCtx) {
 }
 
 function drawLightBlob(targetCtx, b, alphaScale = 1) {
-  const isMobile = width < MOBILE_BREAKPOINT;
-  const mobileSmallLight = isMobile && !b.heroLight;
   const radius = (b.renderRadius ?? b.radius) * dpr;
-  const tilt = (isMobile ? MOBILE_SUN_ANGLE : SUN_ANGLE) + (b.tiltVariation ?? 0);
+  const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
-  const a = Math.min(
-    b.strength * alphaScale * lightBrightBoost * (isMobile ? 0.78 : 1),
-    isMobile ? 0.92 : 1.32
-  );
+  const a = Math.min(b.strength * alphaScale * lightBrightBoost, 1.32);
   const { r, g, b: bv } = LIGHT;
 
   targetCtx.save();
   targetCtx.translate(b.renderX, b.renderY);
   targetCtx.rotate(tilt);
-  targetCtx.transform(1, 0, isMobile ? MOBILE_PERSP_SKEW : PERSP_SKEW, isMobile ? 0.9 : 0.84, 0, radius * 0.05);
+  targetCtx.transform(1, 0, PERSP_SKEW, 0.84, 0, radius * 0.05);
   targetCtx.scale(ex, ey);
 
   const cx = -radius * 0.24;
   const cy = -radius * 0.15;
 
-  const glowRadius = radius * (mobileSmallLight ? 1.08 : 1.55);
-  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, glowRadius);
-  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (mobileSmallLight ? 0.2 : isMobile ? 0.3 : 0.52), 1)})`);
-  glow.addColorStop(0.35, `rgba(255,252,246,${a * (mobileSmallLight ? 0.07 : isMobile ? 0.12 : 0.26)})`);
-  glow.addColorStop(0.65, `rgba(255,250,240,${a * (mobileSmallLight ? 0.018 : isMobile ? 0.035 : 0.1)})`);
+  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * 1.55);
+  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.52, 1)})`);
+  glow.addColorStop(0.35, `rgba(255,252,246,${a * 0.26})`);
+  glow.addColorStop(0.65, `rgba(255,250,240,${a * 0.1})`);
   glow.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.globalCompositeOperation = 'lighter';
   targetCtx.beginPath();
@@ -1693,74 +1652,65 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
 
   const grad = targetCtx.createRadialGradient(
     cx, cy, radius * 0.01,
-    cx * 0.12, cy * 0.12, radius * (mobileSmallLight ? 1.02 : isMobile ? 1.28 : 1.12)
+    cx * 0.12, cy * 0.12, radius * 1.12
   );
-  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.92 : 1.18), 1)})`);
-  grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * (isMobile ? 0.76 : 1.05), 1)})`);
-  grad.addColorStop(isMobile ? 0.2 : 0.18, `rgba(255,252,245,${a * (mobileSmallLight ? 0.58 : isMobile ? 0.5 : 0.86)})`);
-  grad.addColorStop(isMobile ? 0.38 : 0.34, `rgba(${r},${g},${bv},${a * (mobileSmallLight ? 0.36 : isMobile ? 0.3 : 0.58)})`);
-  grad.addColorStop(isMobile ? 0.58 : 0.5, `rgba(${r},${g},${bv},${a * (mobileSmallLight ? 0.13 : isMobile ? 0.14 : 0.36)})`);
-  grad.addColorStop(isMobile ? 0.78 : 0.66, `rgba(${r},${g},${bv},${a * (mobileSmallLight ? 0.025 : isMobile ? 0.035 : 0.17)})`);
-  if (!isMobile) grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * 0.05})`);
+  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * 1.18, 1)})`);
+  grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * 1.05, 1)})`);
+  grad.addColorStop(0.18, `rgba(255,252,245,${a * 0.86})`);
+  grad.addColorStop(0.34, `rgba(${r},${g},${bv},${a * 0.58})`);
+  grad.addColorStop(0.5, `rgba(${r},${g},${bv},${a * 0.36})`);
+  grad.addColorStop(0.66, `rgba(${r},${g},${bv},${a * 0.17})`);
+  grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * 0.05})`);
   grad.addColorStop(1, `rgba(${r},${g},${bv},0)`);
 
   targetCtx.globalCompositeOperation = 'source-over';
 
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
   targetCtx.fillStyle = grad;
-  if (isMobile) {
-    const fillSize = radius * (mobileSmallLight ? 2.05 : 2.65);
-    targetCtx.fillRect(-fillSize, -fillSize, fillSize * 2, fillSize * 2);
-  } else {
-    targetCtx.beginPath();
-    targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
-    targetCtx.fill();
-  }
+  targetCtx.fill();
 
-  if (!isMobile) {
-    const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
-    targetCtx.globalCompositeOperation = 'lighter';
-    targetCtx.beginPath();
-    targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
-    targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
-    targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
-    targetCtx.lineCap = 'round';
-    targetCtx.stroke();
-  }
+  const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
+  targetCtx.globalCompositeOperation = 'lighter';
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
+  targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
+  targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
+  targetCtx.lineCap = 'round';
+  targetCtx.stroke();
 
-  if (!isMobile) {
-    targetCtx.save();
-    targetCtx.beginPath();
-    targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
-    targetCtx.clip();
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
+  targetCtx.clip();
 
-    const fade = targetCtx.createLinearGradient(
-      -radius * 0.5, -radius * 0.32,
-      radius * 0.58, radius * 0.38
-    );
-    fade.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.55, 1)})`);
-    fade.addColorStop(0.28, `rgba(255,253,248,${a * 0.22})`);
-    fade.addColorStop(0.55, `rgba(${r},${g},${bv},${a * 0.08})`);
-    fade.addColorStop(0.8, `rgba(${r},${g},${bv},${a * 0.025})`);
-    fade.addColorStop(1, `rgba(${r},${g},${bv},0)`);
+  const fade = targetCtx.createLinearGradient(
+    -radius * 0.5, -radius * 0.32,
+    radius * 0.58, radius * 0.38
+  );
+  fade.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.55, 1)})`);
+  fade.addColorStop(0.28, `rgba(255,253,248,${a * 0.22})`);
+  fade.addColorStop(0.55, `rgba(${r},${g},${bv},${a * 0.08})`);
+  fade.addColorStop(0.8, `rgba(${r},${g},${bv},${a * 0.025})`);
+  fade.addColorStop(1, `rgba(${r},${g},${bv},0)`);
 
-    targetCtx.globalCompositeOperation = 'lighter';
-    targetCtx.fillStyle = fade;
-    targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
+  targetCtx.globalCompositeOperation = 'lighter';
+  targetCtx.fillStyle = fade;
+  targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
 
-    const toneMask = targetCtx.createLinearGradient(
-      -radius * 0.45, -radius * 0.28,
-      radius * 0.55, radius * 0.36
-    );
-    toneMask.addColorStop(0, 'rgba(255,255,255,1)');
-    toneMask.addColorStop(0.4, 'rgba(255,255,255,0.88)');
-    toneMask.addColorStop(0.68, 'rgba(255,255,255,0.55)');
-    toneMask.addColorStop(1, 'rgba(255,255,255,0.22)');
+  const toneMask = targetCtx.createLinearGradient(
+    -radius * 0.45, -radius * 0.28,
+    radius * 0.55, radius * 0.36
+  );
+  toneMask.addColorStop(0, 'rgba(255,255,255,1)');
+  toneMask.addColorStop(0.4, 'rgba(255,255,255,0.88)');
+  toneMask.addColorStop(0.68, 'rgba(255,255,255,0.55)');
+  toneMask.addColorStop(1, 'rgba(255,255,255,0.22)');
 
-    targetCtx.globalCompositeOperation = 'destination-in';
-    targetCtx.fillStyle = toneMask;
-    targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
-    targetCtx.restore();
-  }
+  targetCtx.globalCompositeOperation = 'destination-in';
+  targetCtx.fillStyle = toneMask;
+  targetCtx.fillRect(-radius * 2.2, -radius * 2.2, radius * 4.4, radius * 4.4);
+  targetCtx.restore();
 
   targetCtx.restore();
 }
