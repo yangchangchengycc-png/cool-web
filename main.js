@@ -515,6 +515,8 @@ function initGapPatches() {
   gapPatches = [];
   const lights = getLightBlobs();
   const isMobile = width < MOBILE_BREAKPOINT;
+  if (isMobile) return;
+
   const maxDist = isMobile ? 145 : 270;
   const minDist = 26;
   const maxGapPatches = isMobile ? 24 : perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
@@ -545,14 +547,14 @@ function initFoliage() {
   foliage = [];
   const isMobile = width < MOBILE_BREAKPOINT;
   const foliageByTier = [20, 28, 24, 22];
-  const foliageCount = isMobile ? 12 : foliageByTier[perfTier] ?? 28;
+  const foliageCount = isMobile ? 9 : foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
-    const scale = isMobile ? 0.52 + Math.random() * 0.58 : 0.65 + Math.random() * 1.05;
-    const radius = (isMobile ? 34 + Math.random() * 78 : 50 + Math.random() * 130) * scale;
+    const scale = isMobile ? 0.42 + Math.random() * 0.42 : 0.65 + Math.random() * 1.05;
+    const radius = (isMobile ? 22 + Math.random() * 46 : 50 + Math.random() * 130) * scale;
     const baseX = Math.random() * width;
     const baseY = Math.random() * height;
-    const shadowShape = Math.random() < (isMobile ? 0.18 : 0.5) ? 'branch' : 'leaf';
+    const shadowShape = isMobile ? 'leaf' : (Math.random() < 0.5 ? 'branch' : 'leaf');
 
     const item = {
       shadowShape,
@@ -563,9 +565,9 @@ function initFoliage() {
       radius,
       rx: isMobile ? 0.72 + Math.random() * 0.54 : 0.5 + Math.random() * 0.95,
       ry: isMobile ? 0.62 + Math.random() * 0.46 : 0.5 + Math.random() * 0.95,
-      strength: isMobile ? 0.22 + Math.random() * 0.2 : 0.34 + Math.random() * 0.38,
+      strength: isMobile ? 0.12 + Math.random() * 0.12 : 0.34 + Math.random() * 0.38,
       shadowTint: Math.random(),
-      shadowDepth: isMobile ? 0.28 + Math.random() * 0.26 : 0.42 + Math.random() * 0.48,
+      shadowDepth: isMobile ? 0.16 + Math.random() * 0.16 : 0.42 + Math.random() * 0.48,
       colorVariant: Math.random(),
       baseAngle: SUN_ANGLE + (Math.random() - 0.5) * 0.9,
       swayFreq: 0.18 + Math.random() * 0.32,
@@ -631,8 +633,10 @@ function initFoliage() {
 
 function initLightBeams() {
   lightBeams = [];
+  if (width < MOBILE_BREAKPOINT) return;
+
   const beamByTier = [5, 7, 6, 5];
-  const count = width < 768 ? 3 : beamByTier[perfTier] ?? 7;
+  const count = beamByTier[perfTier] ?? 7;
   for (let i = 0; i < count; i++) {
     lightBeams.push({
       offset: (i / (count - 1)) * 0.46 - 0.2,
