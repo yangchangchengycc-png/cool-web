@@ -278,7 +278,7 @@ function initBlobs() {
   const mobileAreaScale = Math.min(1, Math.sqrt((width * height) / (390 * 844)));
   const areaScale = isMobile ? mobileAreaScale : Math.min(areaCap, Math.sqrt((width * height) / (1920 * 1080)));
 
-  const lightCount = isMobile ? 3 + Math.floor(Math.random() * 2) : Math.round(46 * areaScale);
+  const lightCount = isMobile ? 4 + Math.floor(Math.random() * 2) : Math.round(46 * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
     if (isMobile) radius *= MOBILE_DESKTOP_CROP_SCALE;
@@ -363,7 +363,7 @@ function initBlobs() {
     { rMin: 132, rMax: 188, exMin: 0.95, exMax: 1.55, eyMin: 0.2, eyMax: 0.34, roundMin: 0.48, roundMax: 0.68 },
   ];
   const activeHeroProfiles = heroProfiles;
-  const heroLightCount = isMobile ? 1 : 3 + Math.floor(Math.random() * 3);
+  const heroLightCount = isMobile ? 2 : 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < heroLightCount; i++) {
     const p = activeHeroProfiles[i % activeHeroProfiles.length];
     const anchorNormX = 0.18 + Math.random() * 0.64;
@@ -1920,6 +1920,35 @@ function drawMobileSoftLight(targetCtx, b, scale = 1, alphaScale = 1) {
   targetCtx.restore();
 }
 
+function drawMobileUpperHighlight(targetCtx, b) {
+  const radius = (b.renderRadius ?? b.radius) * dpr * 1.55;
+  const tilt = MOBILE_SUN_ANGLE + (b.tiltVariation ?? 0);
+  const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
+  const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
+  const round = b.ellipseRound ?? 0.65;
+
+  targetCtx.save();
+  targetCtx.translate(b.renderX, b.renderY);
+  targetCtx.rotate(tilt);
+  targetCtx.transform(1, 0, MOBILE_PERSP_SKEW, 0.9, 0, radius * 0.04);
+  targetCtx.scale(ex, ey);
+
+  const grad = targetCtx.createRadialGradient(
+    -radius * 0.16, -radius * 0.46, radius * 0.02,
+    -radius * 0.04, -radius * 0.32, radius * 0.86
+  );
+  grad.addColorStop(0, 'rgba(255,255,255,0.72)');
+  grad.addColorStop(0.2, 'rgba(255,253,248,0.42)');
+  grad.addColorStop(0.52, 'rgba(255,249,238,0.16)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+
+  targetCtx.fillStyle = grad;
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, -radius * 0.34, radius * 0.9, radius * round * 0.72, 0, 0, Math.PI * 2);
+  targetCtx.fill();
+  targetCtx.restore();
+}
+
 function drawMobileBackdrop(time) {
   const w = canvas.width;
   const h = canvas.height;
@@ -1961,9 +1990,12 @@ function drawMobileBackdrop(time) {
 
   wallCtx.save();
   wallCtx.globalCompositeOperation = 'screen';
-  for (const light of lights) {
-    drawMobileSoftLight(wallCtx, light, 2.35, 0.58);
-    drawMobileSoftLight(wallCtx, light, 1.28, 0.82);
+  for (let i = 0; i < lights.length; i++) {
+    const light = lights[i];
+    const sizeShift = 0.9 + (i % 3) * 0.22;
+    drawMobileSoftLight(wallCtx, light, 2.18 * sizeShift, 0.5);
+    drawMobileSoftLight(wallCtx, light, 1.18 * sizeShift, 0.72);
+    if (i === 0) drawMobileUpperHighlight(wallCtx, light);
   }
   if (pointerOnScreen) drawMobileSoftLight(wallCtx, getCursorLightBlob(), 1.65, 0.72);
   wallCtx.restore();
@@ -1973,9 +2005,13 @@ function drawMobileLightMap() {
   lightCtx.clearRect(0, 0, canvas.width, canvas.height);
   lightCtx.globalCompositeOperation = 'lighter';
 
-  for (const light of getMobileLightSources()) {
-    drawMobileSoftLight(lightCtx, light, 2.1, 0.86);
-    drawMobileSoftLight(lightCtx, light, 1.08, 0.68);
+  const lights = getMobileLightSources();
+  for (let i = 0; i < lights.length; i++) {
+    const light = lights[i];
+    const sizeShift = 0.9 + (i % 3) * 0.22;
+    drawMobileSoftLight(lightCtx, light, 1.95 * sizeShift, 0.78);
+    drawMobileSoftLight(lightCtx, light, 1.02 * sizeShift, 0.6);
+    if (i === 0) drawMobileUpperHighlight(lightCtx, light);
   }
   if (pointerOnScreen) drawMobileSoftLight(lightCtx, getCursorLightBlob(), 1.55, 0.75);
 
