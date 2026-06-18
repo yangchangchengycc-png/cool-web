@@ -1150,6 +1150,7 @@ function updateLightWander(time) {
 }
 
 function updateLightClustering(time) {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const t = time * 0.001;
   const lights = cachedLightBlobs.filter((b) => !b.pinEdge);
   clusterGlows = [];
@@ -1160,7 +1161,7 @@ function updateLightClustering(time) {
     b.clusterPullY = 0;
   }
 
-  const cellSize = 110 * dpr * CLUSTER_AREA_SCALE;
+  const cellSize = (isMobile ? 170 : 110) * dpr * CLUSTER_AREA_SCALE;
   const grid = new Map();
 
   for (let i = 0; i < lights.length; i++) {
@@ -1188,7 +1189,7 @@ function updateLightClustering(time) {
           const dx = b.renderX - a.renderX;
           const dy = b.renderY - a.renderY;
           const dist = Math.hypot(dx, dy);
-          const mergeDist = (a.renderRadius + b.renderRadius) * dpr * 1.2 * CLUSTER_AREA_SCALE;
+          const mergeDist = (a.renderRadius + b.renderRadius) * dpr * (isMobile ? 1.85 : 1.2) * CLUSTER_AREA_SCALE;
           if (dist < 8 || dist > mergeDist) continue;
 
           const closeness = 1 - dist / mergeDist;
@@ -1230,7 +1231,7 @@ function updateLightClustering(time) {
         lights[i].renderX - lights[j].renderX,
         lights[i].renderY - lights[j].renderY
       );
-      const joinDist = (lights[i].renderRadius + lights[j].renderRadius) * dpr * 1.35 * CLUSTER_AREA_SCALE;
+      const joinDist = (lights[i].renderRadius + lights[j].renderRadius) * dpr * (isMobile ? 2.05 : 1.35) * CLUSTER_AREA_SCALE;
       if (dist < joinDist) {
         group.push(lights[j]);
         used.add(j);
@@ -1252,31 +1253,32 @@ function updateLightClustering(time) {
     cx /= group.length;
     cy /= group.length;
 
-    if (maxMerge < 0.2) continue;
+    if (maxMerge < (isMobile ? 0.08 : 0.2)) continue;
 
     const avgR = totalR / group.length;
     clusterGlows.push({
       x: cx,
       y: cy,
-      radius: (avgR * (0.55 + maxMerge * 0.65) + avgR * group.length * 0.12) * CLUSTER_AREA_SCALE,
+      radius: (avgR * (isMobile ? 0.82 + maxMerge * 0.92 : 0.55 + maxMerge * 0.65) + avgR * group.length * (isMobile ? 0.18 : 0.12)) * CLUSTER_AREA_SCALE,
       merge: maxMerge,
-      strength: (0.28 + maxMerge * 0.42) * CLUSTER_AREA_SCALE,
+      strength: (isMobile ? 0.42 + maxMerge * 0.48 : 0.28 + maxMerge * 0.42) * CLUSTER_AREA_SCALE,
     });
   }
 }
 
 function drawClusterGlows(targetCtx) {
+  const isMobile = width < MOBILE_BREAKPOINT;
   targetCtx.save();
   targetCtx.globalCompositeOperation = 'lighter';
   for (const c of clusterGlows) {
-    const s = c.strength * lightBrightBoost;
+    const s = c.strength * lightBrightBoost * (isMobile ? 1.18 : 1);
     const grad = targetCtx.createRadialGradient(
       c.x, c.y, c.radius * 0.05,
       c.x, c.y, c.radius
     );
-    grad.addColorStop(0, `rgba(255,255,252,${s * 0.85})`);
-    grad.addColorStop(0.35, `rgba(255,250,242,${s * 0.42})`);
-    grad.addColorStop(0.68, `rgba(255,247,236,${s * 0.14})`);
+    grad.addColorStop(0, `rgba(255,255,252,${s * (isMobile ? 0.62 : 0.85)})`);
+    grad.addColorStop(0.35, `rgba(255,250,242,${s * (isMobile ? 0.38 : 0.42)})`);
+    grad.addColorStop(0.72, `rgba(255,247,236,${s * (isMobile ? 0.13 : 0.14)})`);
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     targetCtx.fillStyle = grad;
     targetCtx.beginPath();
@@ -1818,12 +1820,12 @@ function drawWall() {
   wallCtx.globalAlpha = 1;
 
   wallCtx.globalCompositeOperation = 'screen';
-  wallCtx.globalAlpha = isMobile ? 0.72 : Math.min(0.94 * lightBrightBoost, 1);
+  wallCtx.globalAlpha = isMobile ? 0.82 : Math.min(0.94 * lightBrightBoost, 1);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
   wallCtx.globalCompositeOperation = 'lighter';
-  wallCtx.globalAlpha = isMobile ? 0.08 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
+  wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
   wallCtx.globalCompositeOperation = 'source-over';
