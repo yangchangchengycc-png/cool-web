@@ -84,9 +84,9 @@ const BLUR_MASK = prefersReducedMotion ? 28 : 42;
 const BLUR_RAYS = prefersReducedMotion ? 22 : 34;
 
 const SUN_ANGLE = Math.PI * 0.75;
-const MOBILE_SUN_ANGLE = Math.PI * 0.6;
+const MOBILE_SUN_ANGLE = Math.PI * 0.66;
 const PERSP_SKEW = -0.28;
-const MOBILE_PERSP_SKEW = -0.1;
+const MOBILE_PERSP_SKEW = -0.13;
 const LIGHT_SIZE_SCALE = 1.18;
 const CLUSTER_AREA_SCALE = 0.8;
 const MOBILE_BREAKPOINT = 768;
@@ -307,6 +307,10 @@ function initBlobs() {
       baseY = Math.random() * height;
     }
     const shape = pickLightEllipse();
+    if (isMobile) {
+      shape.ellipseX = Math.min(shape.ellipseX * 0.74, 1.35);
+      shape.ellipseY = Math.min(shape.ellipseY * 1.08, 0.58);
+    }
 
     const blob = {
       type: 'light',
@@ -363,8 +367,8 @@ function initBlobs() {
   ];
   const mobileHeroProfiles = [
     { rMin: 150, rMax: 205, exMin: 0.82, exMax: 1.12, eyMin: 0.36, eyMax: 0.52, roundMin: 0.66, roundMax: 0.84 },
-    { rMin: 120, rMax: 176, exMin: 1.55, exMax: 2.25, eyMin: 0.14, eyMax: 0.24, roundMin: 0.32, roundMax: 0.46 },
-    { rMin: 138, rMax: 190, exMin: 1.05, exMax: 1.5, eyMin: 0.24, eyMax: 0.38, roundMin: 0.48, roundMax: 0.68 },
+    { rMin: 120, rMax: 176, exMin: 1.22, exMax: 1.72, eyMin: 0.18, eyMax: 0.3, roundMin: 0.36, roundMax: 0.5 },
+    { rMin: 138, rMax: 190, exMin: 0.92, exMax: 1.28, eyMin: 0.28, eyMax: 0.42, roundMin: 0.52, roundMax: 0.72 },
   ];
 
   const activeHeroProfiles = isMobile ? mobileHeroProfiles : heroProfiles;
@@ -534,11 +538,11 @@ function initGapPatches() {
       gapPatches.push({
         lightA: lights[i],
         lightB: lights[j],
-        sizeScale: isMobile ? 0.22 + Math.random() * 0.36 : 0.45 + Math.random() * 1.05,
-        depth: isMobile ? 0.26 + Math.random() * 0.28 : 0.5 + Math.random() * 0.46,
+        sizeScale: isMobile ? 0.2 + Math.random() * 0.28 : 0.45 + Math.random() * 1.05,
+        depth: isMobile ? 0.3 + Math.random() * 0.3 : 0.5 + Math.random() * 0.46,
         colorVariant: Math.random(),
         bias: (Math.random() - 0.5) * 0.48,
-        aspect: isMobile ? 0.76 + Math.random() * 0.34 : 0.5 + Math.random() * 0.72,
+        aspect: isMobile ? 0.24 + Math.random() * 0.26 : 0.5 + Math.random() * 0.72,
       });
     }
   }
@@ -981,6 +985,7 @@ function getGapShadowColor(patch) {
 }
 
 function drawGapPatch(targetCtx, blobA, blobB, patch) {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const dx = blobB.renderX - blobA.renderX;
   const dy = blobB.renderY - blobA.renderY;
   const dist = Math.hypot(dx, dy);
@@ -993,22 +998,24 @@ function drawGapPatch(targetCtx, blobA, blobB, patch) {
   const rA = (blobA.renderRadius ?? blobA.radius) * dpr;
   const rB = (blobB.renderRadius ?? blobB.radius) * dpr;
   const avgR = (rA + rB) * 0.5;
-  const rad = (dist * 0.36 + avgR * 0.48) * (patch.sizeScale ?? 0.75);
+  const rad =
+    (dist * (isMobile ? 0.3 : 0.36) + avgR * (isMobile ? 0.34 : 0.48)) *
+    (patch.sizeScale ?? 0.75);
   const color = getGapShadowColor(patch);
   const a = patch.depth ?? 0.55;
 
   targetCtx.save();
   targetCtx.translate(mx, my);
   targetCtx.rotate(Math.atan2(dy, dx));
-  targetCtx.scale(1, patch.aspect ?? 0.8);
+  targetCtx.scale(isMobile ? 1.55 : 1, patch.aspect ?? 0.8);
 
   const grad = targetCtx.createRadialGradient(0, 0, rad * 0.06, 0, 0, rad);
-  grad.addColorStop(0, `rgba(${color.r},${color.g},${color.b},${Math.min(a * 1.02, 0.92)})`);
-  grad.addColorStop(0.4, `rgba(${color.r},${color.g},${color.b},${a * 0.62})`);
-  grad.addColorStop(0.72, `rgba(${color.r},${color.g},${color.b},${a * 0.26})`);
+  grad.addColorStop(0, `rgba(${color.r},${color.g},${color.b},${Math.min(a * (isMobile ? 0.68 : 1.02), isMobile ? 0.48 : 0.92)})`);
+  grad.addColorStop(isMobile ? 0.34 : 0.4, `rgba(${color.r},${color.g},${color.b},${a * (isMobile ? 0.48 : 0.62)})`);
+  grad.addColorStop(isMobile ? 0.78 : 0.72, `rgba(${color.r},${color.g},${color.b},${a * (isMobile ? 0.18 : 0.26)})`);
   grad.addColorStop(1, `rgba(${color.r},${color.g},${color.b},0)`);
   targetCtx.fillStyle = grad;
-  targetCtx.fillRect(-rad * 1.25, -rad * 1.25, rad * 2.5, rad * 2.5);
+  targetCtx.fillRect(-rad * 1.45, -rad * 1.45, rad * 2.9, rad * 2.9);
   targetCtx.restore();
 }
 
