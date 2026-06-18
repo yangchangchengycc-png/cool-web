@@ -84,7 +84,9 @@ const BLUR_MASK = prefersReducedMotion ? 28 : 42;
 const BLUR_RAYS = prefersReducedMotion ? 22 : 34;
 
 const SUN_ANGLE = Math.PI * 0.75;
+const MOBILE_SUN_ANGLE = Math.PI * 0.68;
 const PERSP_SKEW = -0.28;
+const MOBILE_PERSP_SKEW = -0.16;
 const LIGHT_SIZE_SCALE = 1.18;
 const CLUSTER_AREA_SCALE = 0.8;
 const MOBILE_BREAKPOINT = 768;
@@ -278,7 +280,7 @@ function initBlobs() {
   const lightCount = Math.round((isMobile ? 14 : 46) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
-    if (isMobile) radius *= 0.72 + Math.random() * 0.32;
+    if (isMobile) radius *= 0.58 + Math.random() * 0.24;
     let baseX;
     let baseY;
     const zone = Math.random();
@@ -316,7 +318,7 @@ function initBlobs() {
       ellipseX: shape.ellipseX,
       ellipseY: shape.ellipseY,
       ellipseRound: shape.ellipseRound,
-      tiltVariation: (Math.random() - 0.5) * 0.22,
+      tiltVariation: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.22),
       rx: 0.88 + Math.random() * 0.24,
       ry: 0.88 + Math.random() * 0.24,
       strength: 0.34 + Math.random() * 0.48,
@@ -375,7 +377,7 @@ function initBlobs() {
       (p.rMin + Math.random() * (p.rMax - p.rMin)) *
       LIGHT_SIZE_SCALE *
       1.15 *
-      (isMobile ? (isPortrait ? 0.82 : 0.95) : (largeScreen ? 1.08 : 1));
+      (isMobile ? (isPortrait ? 0.7 : 0.82) : (largeScreen ? 1.08 : 1));
     blobs.push({
       type: 'light',
       heroLight: true,
@@ -392,7 +394,7 @@ function initBlobs() {
       ellipseX: p.exMin + Math.random() * (p.exMax - p.exMin),
       ellipseY: p.eyMin + Math.random() * (p.eyMax - p.eyMin),
       ellipseRound: p.roundMin + Math.random() * (p.roundMax - p.roundMin),
-      tiltVariation: (Math.random() - 0.5) * 0.24,
+      tiltVariation: (Math.random() - 0.5) * (isMobile ? 0.12 : 0.24),
       rx: 0.94 + Math.random() * 0.2,
       ry: 0.94 + Math.random() * 0.2,
       strength: 0.92 + Math.random() * 0.22,
@@ -1495,7 +1497,7 @@ function drawShadowShape(targetCtx, b, color, alphaScale = 1) {
 function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
   const isMobile = width < MOBILE_BREAKPOINT;
   const radius = (b.renderRadius ?? b.radius) * dpr;
-  const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
+  const tilt = (isMobile ? MOBILE_SUN_ANGLE : SUN_ANGLE) + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
@@ -1505,7 +1507,7 @@ function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
   targetCtx.save();
   targetCtx.translate(b.renderX, b.renderY);
   targetCtx.rotate(tilt);
-  targetCtx.transform(1, 0, PERSP_SKEW, 0.84, 0, radius * 0.05);
+  targetCtx.transform(1, 0, isMobile ? MOBILE_PERSP_SKEW : PERSP_SKEW, isMobile ? 0.9 : 0.84, 0, radius * 0.05);
   targetCtx.scale(ex, ey);
 
   const cx = -radius * 0.24;
@@ -1634,7 +1636,7 @@ function drawGapShadowBoost(targetCtx) {
 function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const isMobile = width < MOBILE_BREAKPOINT;
   const radius = (b.renderRadius ?? b.radius) * dpr;
-  const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
+  const tilt = (isMobile ? MOBILE_SUN_ANGLE : SUN_ANGLE) + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
@@ -1647,7 +1649,7 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   targetCtx.save();
   targetCtx.translate(b.renderX, b.renderY);
   targetCtx.rotate(tilt);
-  targetCtx.transform(1, 0, PERSP_SKEW, 0.84, 0, radius * 0.05);
+  targetCtx.transform(1, 0, isMobile ? MOBILE_PERSP_SKEW : PERSP_SKEW, isMobile ? 0.9 : 0.84, 0, radius * 0.05);
   targetCtx.scale(ex, ey);
 
   const cx = -radius * 0.24;
@@ -1830,7 +1832,7 @@ function drawWall() {
   }
 
   wallCtx.globalCompositeOperation = 'multiply';
-  wallCtx.globalAlpha = isMobile ? 0.58 : 0.78;
+  wallCtx.globalAlpha = isMobile ? 0.64 : 0.78;
   wallCtx.drawImage(shadowCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
