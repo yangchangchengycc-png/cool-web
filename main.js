@@ -512,6 +512,7 @@ function initGapPatches() {
   gapPatches = [];
   const lights = getLightBlobs();
   const isMobile = width < MOBILE_BREAKPOINT;
+  if (isMobile) return;
 
   const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
@@ -1603,6 +1604,8 @@ function drawShadowAmbientWashes(targetCtx) {
 }
 
 function drawGapShadowBoost(targetCtx) {
+  if (width < MOBILE_BREAKPOINT) return;
+
   for (const patch of gapPatches) {
     drawGapPatch(targetCtx, patch.lightA, patch.lightB, patch);
   }
@@ -1622,6 +1625,7 @@ function drawGapShadowBoost(targetCtx) {
 }
 
 function drawLightBlob(targetCtx, b, alphaScale = 1) {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const radius = (b.renderRadius ?? b.radius) * dpr;
   const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
@@ -1639,14 +1643,14 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const cx = -radius * 0.24;
   const cy = -radius * 0.15;
 
-  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * 1.55);
-  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.52, 1)})`);
-  glow.addColorStop(0.35, `rgba(255,252,246,${a * 0.26})`);
-  glow.addColorStop(0.65, `rgba(255,250,240,${a * 0.1})`);
+  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * (isMobile ? 1.12 : 1.55));
+  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.34 : 0.52), 1)})`);
+  glow.addColorStop(0.35, `rgba(255,252,246,${a * (isMobile ? 0.12 : 0.26)})`);
+  glow.addColorStop(0.65, `rgba(255,250,240,${a * (isMobile ? 0.035 : 0.1)})`);
   glow.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.globalCompositeOperation = 'lighter';
   targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius * 1.38, radius * round * 1.38, 0, 0, Math.PI * 2);
+  targetCtx.ellipse(0, 0, radius * (isMobile ? 1.08 : 1.38), radius * round * (isMobile ? 1.08 : 1.38), 0, 0, Math.PI * 2);
   targetCtx.fillStyle = glow;
   targetCtx.fill();
 
