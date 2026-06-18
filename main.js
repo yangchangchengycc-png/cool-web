@@ -208,11 +208,15 @@ function initFrostGrain() {
 
 function pickLightRadius() {
   const r = Math.random();
-  if (r < 0.3) return (10 + Math.random() * 28) * LIGHT_SIZE_SCALE;
-  if (r < 0.55) return (26 + Math.random() * 40) * LIGHT_SIZE_SCALE;
-  if (r < 0.78) return (46 + Math.random() * 54) * LIGHT_SIZE_SCALE;
-  if (r < 0.92) return (68 + Math.random() * 48) * LIGHT_SIZE_SCALE;
-  return (92 + Math.random() * 58) * LIGHT_SIZE_SCALE;
+  let radius;
+  if (r < 0.34) radius = 8 + Math.random() * 30;
+  else if (r < 0.58) radius = 22 + Math.random() * 44;
+  else if (r < 0.78) radius = 42 + Math.random() * 60;
+  else if (r < 0.92) radius = 66 + Math.random() * 58;
+  else radius = 96 + Math.random() * 72;
+
+  const sizeJitter = 0.72 + Math.random() * 0.68;
+  return radius * sizeJitter * LIGHT_SIZE_SCALE;
 }
 
 function pickLightEllipse() {
@@ -349,14 +353,16 @@ function initBlobs() {
     { rMin: 112, rMax: 162, exMin: 2.15, exMax: 3.0, eyMin: 0.08, eyMax: 0.14, roundMin: 0.28, roundMax: 0.38 },
     { rMin: 148, rMax: 212, exMin: 1.3, exMax: 1.8, eyMin: 0.17, eyMax: 0.26, roundMin: 0.42, roundMax: 0.52 },
     { rMin: 98, rMax: 142, exMin: 1.65, exMax: 2.35, eyMin: 0.1, eyMax: 0.18, roundMin: 0.34, roundMax: 0.44 },
+    { rMin: 132, rMax: 188, exMin: 0.95, exMax: 1.55, eyMin: 0.2, eyMax: 0.34, roundMin: 0.48, roundMax: 0.68 },
   ];
 
-  for (let i = 0; i < 4; i++) {
+  const heroLightCount = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < heroLightCount; i++) {
     const p = heroProfiles[i];
     const anchorNormX = 0.18 + Math.random() * 0.64;
     const anchorNormY = 0.18 + Math.random() * 0.64;
     const radius =
-      (p.rMin + Math.random() * (p.rMax - p.rMin)) * LIGHT_SIZE_SCALE * (largeScreen ? 1.08 : 1);
+      (p.rMin + Math.random() * (p.rMax - p.rMin)) * LIGHT_SIZE_SCALE * 1.15 * (largeScreen ? 1.08 : 1);
     blobs.push({
       type: 'light',
       heroLight: true,
@@ -376,7 +382,7 @@ function initBlobs() {
       tiltVariation: (Math.random() - 0.5) * 0.24,
       rx: 0.94 + Math.random() * 0.2,
       ry: 0.94 + Math.random() * 0.2,
-      strength: 0.5 + Math.random() * 0.34,
+      strength: 0.92 + Math.random() * 0.22,
       swayFreq: 0.14 + Math.random() * 0.22,
       swayAmp: 22 + Math.random() * 32,
       flutterFreq: 0.9 + Math.random() * 1.5,
@@ -1650,6 +1656,15 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
   targetCtx.fillStyle = grad;
   targetCtx.fill();
+
+  const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
+  targetCtx.globalCompositeOperation = 'lighter';
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
+  targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
+  targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
+  targetCtx.lineCap = 'round';
+  targetCtx.stroke();
 
   targetCtx.save();
   targetCtx.beginPath();
