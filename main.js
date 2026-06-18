@@ -1635,7 +1635,10 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
-  const a = Math.min(b.strength * alphaScale * lightBrightBoost, 1.32);
+  const a = Math.min(
+    b.strength * alphaScale * lightBrightBoost * (isMobile ? 0.82 : 1),
+    isMobile ? 0.96 : 1.32
+  );
   const { r, g, b: bv } = LIGHT;
 
   targetCtx.save();
@@ -1647,14 +1650,15 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const cx = -radius * 0.24;
   const cy = -radius * 0.15;
 
-  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * (isMobile ? 0.96 : 1.55));
-  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.28 : 0.52), 1)})`);
-  glow.addColorStop(0.35, `rgba(255,252,246,${a * (isMobile ? 0.08 : 0.26)})`);
-  glow.addColorStop(0.65, `rgba(255,250,240,${a * (isMobile ? 0.02 : 0.1)})`);
+  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * (isMobile ? 2.35 : 1.55));
+  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.34 : 0.52), 1)})`);
+  glow.addColorStop(0.32, `rgba(255,252,246,${a * (isMobile ? 0.2 : 0.26)})`);
+  glow.addColorStop(0.68, `rgba(255,250,240,${a * (isMobile ? 0.09 : 0.1)})`);
+  if (isMobile) glow.addColorStop(0.9, `rgba(255,248,236,${a * 0.025})`);
   glow.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.globalCompositeOperation = 'lighter';
   targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius * (isMobile ? 0.98 : 1.38), radius * round * (isMobile ? 1.18 : 1.38), 0, 0, Math.PI * 2);
+  targetCtx.ellipse(0, 0, radius * (isMobile ? 2.05 : 1.38), radius * round * (isMobile ? 2.25 : 1.38), 0, 0, Math.PI * 2);
   targetCtx.fillStyle = glow;
   targetCtx.fill();
 
@@ -1662,13 +1666,12 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
     cx, cy, radius * 0.01,
     cx * 0.12, cy * 0.12, radius * 1.12
   );
-  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * 1.18, 1)})`);
-  grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * 1.05, 1)})`);
-  grad.addColorStop(0.18, `rgba(255,252,245,${a * 0.86})`);
-  grad.addColorStop(0.34, `rgba(${r},${g},${bv},${a * 0.58})`);
-  grad.addColorStop(0.5, `rgba(${r},${g},${bv},${a * 0.36})`);
-  grad.addColorStop(0.66, `rgba(${r},${g},${bv},${a * 0.17})`);
-  grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * 0.05})`);
+  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.82 : 1.18), 1)})`);
+  grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * (isMobile ? 0.72 : 1.05), 1)})`);
+  grad.addColorStop(0.22, `rgba(255,252,245,${a * (isMobile ? 0.54 : 0.86)})`);
+  grad.addColorStop(0.42, `rgba(${r},${g},${bv},${a * (isMobile ? 0.32 : 0.58)})`);
+  grad.addColorStop(0.64, `rgba(${r},${g},${bv},${a * (isMobile ? 0.16 : 0.36)})`);
+  grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * (isMobile ? 0.045 : 0.05)})`);
   grad.addColorStop(1, `rgba(${r},${g},${bv},0)`);
 
   targetCtx.globalCompositeOperation = 'source-over';
@@ -1678,14 +1681,16 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   targetCtx.fillStyle = grad;
   targetCtx.fill();
 
-  const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
-  targetCtx.globalCompositeOperation = 'lighter';
-  targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
-  targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
-  targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
-  targetCtx.lineCap = 'round';
-  targetCtx.stroke();
+  if (!isMobile) {
+    const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
+    targetCtx.globalCompositeOperation = 'lighter';
+    targetCtx.beginPath();
+    targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
+    targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
+    targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
+    targetCtx.lineCap = 'round';
+    targetCtx.stroke();
+  }
 
   targetCtx.save();
   targetCtx.beginPath();
@@ -1802,6 +1807,31 @@ function drawLightMap() {
   blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.55 : BLUR_MASK, maskFilter);
 }
 
+function drawMobileAmbientLightBlend() {
+  wallCtx.save();
+  wallCtx.globalCompositeOperation = 'screen';
+
+  for (const b of cachedLightBlobs) {
+    if (!b.heroLight) continue;
+
+    const radius = (b.renderRadius ?? b.radius) * dpr;
+    const grad = wallCtx.createRadialGradient(
+      b.renderX, b.renderY, radius * 0.12,
+      b.renderX, b.renderY, radius * 3.2
+    );
+    grad.addColorStop(0, 'rgba(255,255,255,0.16)');
+    grad.addColorStop(0.28, 'rgba(255,252,246,0.11)');
+    grad.addColorStop(0.58, 'rgba(255,248,236,0.055)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    wallCtx.fillStyle = grad;
+    wallCtx.beginPath();
+    wallCtx.arc(b.renderX, b.renderY, radius * 3.2, 0, Math.PI * 2);
+    wallCtx.fill();
+  }
+
+  wallCtx.restore();
+}
+
 function drawWall() {
   const isMobile = width < MOBILE_BREAKPOINT;
   wallCtx.fillStyle = WALL;
@@ -1819,8 +1849,10 @@ function drawWall() {
   wallCtx.drawImage(shadowCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
+  if (isMobile) drawMobileAmbientLightBlend();
+
   wallCtx.globalCompositeOperation = 'screen';
-  wallCtx.globalAlpha = isMobile ? 0.82 : Math.min(0.94 * lightBrightBoost, 1);
+  wallCtx.globalAlpha = isMobile ? 0.88 : Math.min(0.94 * lightBrightBoost, 1);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
