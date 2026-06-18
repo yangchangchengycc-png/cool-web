@@ -84,9 +84,9 @@ const BLUR_MASK = prefersReducedMotion ? 28 : 42;
 const BLUR_RAYS = prefersReducedMotion ? 22 : 34;
 
 const SUN_ANGLE = Math.PI * 0.75;
-const MOBILE_SUN_ANGLE = Math.PI * 0.68;
+const MOBILE_SUN_ANGLE = Math.PI * 0.6;
 const PERSP_SKEW = -0.28;
-const MOBILE_PERSP_SKEW = -0.16;
+const MOBILE_PERSP_SKEW = -0.1;
 const LIGHT_SIZE_SCALE = 1.18;
 const CLUSTER_AREA_SCALE = 0.8;
 const MOBILE_BREAKPOINT = 768;
@@ -280,7 +280,7 @@ function initBlobs() {
   const lightCount = Math.round((isMobile ? 14 : 46) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
-    if (isMobile) radius *= 0.66 + Math.random() * 0.26;
+    if (isMobile) radius *= 0.78 + Math.random() * 0.28;
     let baseX;
     let baseY;
     const zone = Math.random();
@@ -517,11 +517,10 @@ function initGapPatches() {
   gapPatches = [];
   const lights = getLightBlobs();
   const isMobile = width < MOBILE_BREAKPOINT;
-  if (isMobile) return;
 
-  const maxDist = isMobile ? 145 : 270;
+  const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 24 : perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
+  const maxGapPatches = isMobile ? 32 : perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -535,11 +534,11 @@ function initGapPatches() {
       gapPatches.push({
         lightA: lights[i],
         lightB: lights[j],
-        sizeScale: isMobile ? 0.28 + Math.random() * 0.44 : 0.45 + Math.random() * 1.05,
-        depth: isMobile ? 0.22 + Math.random() * 0.26 : 0.5 + Math.random() * 0.46,
+        sizeScale: isMobile ? 0.22 + Math.random() * 0.36 : 0.45 + Math.random() * 1.05,
+        depth: isMobile ? 0.26 + Math.random() * 0.28 : 0.5 + Math.random() * 0.46,
         colorVariant: Math.random(),
         bias: (Math.random() - 0.5) * 0.48,
-        aspect: isMobile ? 0.72 + Math.random() * 0.42 : 0.5 + Math.random() * 0.72,
+        aspect: isMobile ? 0.76 + Math.random() * 0.34 : 0.5 + Math.random() * 0.72,
       });
     }
   }
@@ -1635,6 +1634,7 @@ function drawGapShadowBoost(targetCtx) {
 
 function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const isMobile = width < MOBILE_BREAKPOINT;
+  const mobileSmallLight = isMobile && !b.heroLight;
   const radius = (b.renderRadius ?? b.radius) * dpr;
   const tilt = (isMobile ? MOBILE_SUN_ANGLE : SUN_ANGLE) + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
@@ -1655,10 +1655,11 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const cx = -radius * 0.24;
   const cy = -radius * 0.15;
 
-  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * 1.55);
-  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.3 : 0.52), 1)})`);
-  glow.addColorStop(0.35, `rgba(255,252,246,${a * (isMobile ? 0.12 : 0.26)})`);
-  glow.addColorStop(0.65, `rgba(255,250,240,${a * (isMobile ? 0.035 : 0.1)})`);
+  const glowRadius = radius * (mobileSmallLight ? 1.08 : 1.55);
+  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, glowRadius);
+  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (mobileSmallLight ? 0.2 : isMobile ? 0.3 : 0.52), 1)})`);
+  glow.addColorStop(0.35, `rgba(255,252,246,${a * (mobileSmallLight ? 0.07 : isMobile ? 0.12 : 0.26)})`);
+  glow.addColorStop(0.65, `rgba(255,250,240,${a * (mobileSmallLight ? 0.018 : isMobile ? 0.035 : 0.1)})`);
   glow.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.globalCompositeOperation = 'lighter';
   targetCtx.beginPath();
@@ -1668,14 +1669,14 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
 
   const grad = targetCtx.createRadialGradient(
     cx, cy, radius * 0.01,
-    cx * 0.12, cy * 0.12, radius * (isMobile ? 1.28 : 1.12)
+    cx * 0.12, cy * 0.12, radius * (mobileSmallLight ? 1.02 : isMobile ? 1.28 : 1.12)
   );
   grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.92 : 1.18), 1)})`);
   grad.addColorStop(0.07, `rgba(255,255,252,${Math.min(a * (isMobile ? 0.76 : 1.05), 1)})`);
-  grad.addColorStop(isMobile ? 0.2 : 0.18, `rgba(255,252,245,${a * (isMobile ? 0.5 : 0.86)})`);
-  grad.addColorStop(isMobile ? 0.38 : 0.34, `rgba(${r},${g},${bv},${a * (isMobile ? 0.3 : 0.58)})`);
-  grad.addColorStop(isMobile ? 0.58 : 0.5, `rgba(${r},${g},${bv},${a * (isMobile ? 0.14 : 0.36)})`);
-  grad.addColorStop(isMobile ? 0.78 : 0.66, `rgba(${r},${g},${bv},${a * (isMobile ? 0.035 : 0.17)})`);
+  grad.addColorStop(isMobile ? 0.2 : 0.18, `rgba(255,252,245,${a * (mobileSmallLight ? 0.58 : isMobile ? 0.5 : 0.86)})`);
+  grad.addColorStop(isMobile ? 0.38 : 0.34, `rgba(${r},${g},${bv},${a * (mobileSmallLight ? 0.36 : isMobile ? 0.3 : 0.58)})`);
+  grad.addColorStop(isMobile ? 0.58 : 0.5, `rgba(${r},${g},${bv},${a * (mobileSmallLight ? 0.13 : isMobile ? 0.14 : 0.36)})`);
+  grad.addColorStop(isMobile ? 0.78 : 0.66, `rgba(${r},${g},${bv},${a * (mobileSmallLight ? 0.025 : isMobile ? 0.035 : 0.17)})`);
   if (!isMobile) grad.addColorStop(0.82, `rgba(${r},${g},${bv},${a * 0.05})`);
   grad.addColorStop(1, `rgba(${r},${g},${bv},0)`);
 
@@ -1683,7 +1684,7 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
 
   targetCtx.fillStyle = grad;
   if (isMobile) {
-    const fillSize = radius * 2.65;
+    const fillSize = radius * (mobileSmallLight ? 2.05 : 2.65);
     targetCtx.fillRect(-fillSize, -fillSize, fillSize * 2, fillSize * 2);
   } else {
     targetCtx.beginPath();
