@@ -543,8 +543,10 @@ function initGapPatches() {
 function initFoliage() {
   foliage = [];
   const isMobile = width < MOBILE_BREAKPOINT;
+  if (isMobile) return;
+
   const foliageByTier = [20, 28, 24, 22];
-  const foliageCount = isMobile ? 9 : foliageByTier[perfTier] ?? 28;
+  const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
     const scale = isMobile ? 0.42 + Math.random() * 0.42 : 0.65 + Math.random() * 1.05;
@@ -1643,14 +1645,14 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const cx = -radius * 0.24;
   const cy = -radius * 0.15;
 
-  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * (isMobile ? 1.12 : 1.55));
-  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.34 : 0.52), 1)})`);
-  glow.addColorStop(0.35, `rgba(255,252,246,${a * (isMobile ? 0.12 : 0.26)})`);
-  glow.addColorStop(0.65, `rgba(255,250,240,${a * (isMobile ? 0.035 : 0.1)})`);
+  const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * (isMobile ? 0.96 : 1.55));
+  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.28 : 0.52), 1)})`);
+  glow.addColorStop(0.35, `rgba(255,252,246,${a * (isMobile ? 0.08 : 0.26)})`);
+  glow.addColorStop(0.65, `rgba(255,250,240,${a * (isMobile ? 0.02 : 0.1)})`);
   glow.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.globalCompositeOperation = 'lighter';
   targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius * (isMobile ? 1.08 : 1.38), radius * round * (isMobile ? 1.08 : 1.38), 0, 0, Math.PI * 2);
+  targetCtx.ellipse(0, 0, radius * (isMobile ? 0.98 : 1.38), radius * round * (isMobile ? 1.18 : 1.38), 0, 0, Math.PI * 2);
   targetCtx.fillStyle = glow;
   targetCtx.fill();
 
@@ -1670,7 +1672,7 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   targetCtx.globalCompositeOperation = 'source-over';
 
   targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
+  targetCtx.ellipse(0, 0, radius * (isMobile ? 0.96 : 1), radius * round * (isMobile ? 1.16 : 1), 0, 0, Math.PI * 2);
   targetCtx.fillStyle = grad;
   targetCtx.fill();
 
