@@ -514,10 +514,10 @@ function initBlobs() {
 function initGapPatches() {
   gapPatches = [];
   const lights = getLightBlobs();
-  const isMobile = width < 768;
-  const maxDist = isMobile ? 210 : 270;
+  const isMobile = width < MOBILE_BREAKPOINT;
+  const maxDist = isMobile ? 145 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 70 : perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
+  const maxGapPatches = isMobile ? 24 : perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -531,11 +531,11 @@ function initGapPatches() {
       gapPatches.push({
         lightA: lights[i],
         lightB: lights[j],
-        sizeScale: 0.45 + Math.random() * 1.05,
-        depth: 0.5 + Math.random() * 0.46,
+        sizeScale: isMobile ? 0.28 + Math.random() * 0.44 : 0.45 + Math.random() * 1.05,
+        depth: isMobile ? 0.22 + Math.random() * 0.26 : 0.5 + Math.random() * 0.46,
         colorVariant: Math.random(),
         bias: (Math.random() - 0.5) * 0.48,
-        aspect: 0.5 + Math.random() * 0.72,
+        aspect: isMobile ? 0.72 + Math.random() * 0.42 : 0.5 + Math.random() * 0.72,
       });
     }
   }
@@ -543,16 +543,16 @@ function initGapPatches() {
 
 function initFoliage() {
   foliage = [];
-  const isMobile = width < 768;
+  const isMobile = width < MOBILE_BREAKPOINT;
   const foliageByTier = [20, 28, 24, 22];
   const foliageCount = isMobile ? 12 : foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
-    const scale = 0.65 + Math.random() * 1.05;
-    const radius = (50 + Math.random() * 130) * scale;
+    const scale = isMobile ? 0.52 + Math.random() * 0.58 : 0.65 + Math.random() * 1.05;
+    const radius = (isMobile ? 34 + Math.random() * 78 : 50 + Math.random() * 130) * scale;
     const baseX = Math.random() * width;
     const baseY = Math.random() * height;
-    const shadowShape = Math.random() < 0.5 ? 'branch' : 'leaf';
+    const shadowShape = Math.random() < (isMobile ? 0.18 : 0.5) ? 'branch' : 'leaf';
 
     const item = {
       shadowShape,
@@ -561,17 +561,17 @@ function initFoliage() {
       relX: baseX - width * 0.5,
       relY: baseY - height * 0.5,
       radius,
-      rx: 0.5 + Math.random() * 0.95,
-      ry: 0.5 + Math.random() * 0.95,
-      strength: 0.34 + Math.random() * 0.38,
+      rx: isMobile ? 0.72 + Math.random() * 0.54 : 0.5 + Math.random() * 0.95,
+      ry: isMobile ? 0.62 + Math.random() * 0.46 : 0.5 + Math.random() * 0.95,
+      strength: isMobile ? 0.22 + Math.random() * 0.2 : 0.34 + Math.random() * 0.38,
       shadowTint: Math.random(),
-      shadowDepth: 0.42 + Math.random() * 0.48,
+      shadowDepth: isMobile ? 0.28 + Math.random() * 0.26 : 0.42 + Math.random() * 0.48,
       colorVariant: Math.random(),
       baseAngle: SUN_ANGLE + (Math.random() - 0.5) * 0.9,
       swayFreq: 0.18 + Math.random() * 0.32,
-      swayAmp: 10 + Math.random() * 28,
+      swayAmp: isMobile ? 5 + Math.random() * 12 : 10 + Math.random() * 28,
       flutterFreq: 1.1 + Math.random() * 2.2,
-      flutterAmp: 3 + Math.random() * 12,
+      flutterAmp: isMobile ? 1.5 + Math.random() * 5 : 3 + Math.random() * 12,
       phase: Math.random() * Math.PI * 2,
       phase2: Math.random() * Math.PI * 2,
       parallax: 0.2 + Math.random() * 0.6,
@@ -583,35 +583,35 @@ function initFoliage() {
     };
 
     if (shadowShape === 'branch') {
-      const segCount = 3 + Math.floor(Math.random() * 5);
+      const segCount = isMobile ? 3 + Math.floor(Math.random() * 3) : 3 + Math.floor(Math.random() * 5);
       const segments = [];
       for (let s = 0; s < segCount; s++) {
         segments.push({
           t: s / Math.max(segCount - 1, 1),
-          perpOffset: (Math.random() - 0.5) * 0.55,
-          width: 0.12 + Math.random() * 0.28,
+          perpOffset: (Math.random() - 0.5) * (isMobile ? 0.38 : 0.55),
+          width: isMobile ? 0.06 + Math.random() * 0.12 : 0.12 + Math.random() * 0.28,
           bulge: 0.65 + Math.random() * 0.55,
         });
       }
       item.branch = {
-        length: radius * (1.6 + Math.random() * 0.9),
+        length: radius * (isMobile ? 1.05 + Math.random() * 0.45 : 1.6 + Math.random() * 0.9),
         segments,
         twigs: (() => {
           const twigs = [];
-          const twigCount = 1 + Math.floor(Math.random() * 4);
+          const twigCount = isMobile ? 1 + Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 4);
           for (let tw = 0; tw < twigCount; tw++) {
             twigs.push({
               segT: segments[Math.floor(Math.random() * segments.length)].t,
               angle: (Math.random() - 0.5) * 1.6,
-              len: 0.22 + Math.random() * 0.48,
-              width: 0.3 + Math.random() * 0.5,
+              len: isMobile ? 0.14 + Math.random() * 0.24 : 0.22 + Math.random() * 0.48,
+              width: isMobile ? 0.18 + Math.random() * 0.22 : 0.3 + Math.random() * 0.5,
             });
           }
           return twigs;
         })(),
       };
     } else {
-      const leafCount = 2 + Math.floor(Math.random() * 3);
+      const leafCount = isMobile ? 2 + Math.floor(Math.random() * 2) : 2 + Math.floor(Math.random() * 3);
       const leaves = [];
       for (let l = 0; l < leafCount; l++) {
         leaves.push({
@@ -1736,7 +1736,7 @@ function drawShadowLayer() {
   drawGapShadowBoost(shadowRawCtx);
 
   for (const f of foliage) {
-    drawShadowShape(shadowRawCtx, f, getShadowColor(f), 1.34);
+    drawShadowShape(shadowRawCtx, f, getShadowColor(f), isMobile ? 0.92 : 1.34);
   }
 
   shadowRawCtx.globalCompositeOperation = 'destination-out';
