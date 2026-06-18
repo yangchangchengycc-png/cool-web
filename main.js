@@ -118,8 +118,8 @@ function updatePerfProfile() {
 
   if (width < 768) {
     perfTier = 0;
-    renderScale = 0.88;
-    dpr = Math.min(rawDpr, 1.25);
+    renderScale = 0.72;
+    dpr = Math.min(rawDpr, 1.1);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
     renderScale = 0.48;
@@ -268,13 +268,16 @@ function initEdgeFeatherSpots() {
 function initBlobs() {
   blobs = [];
   const isMobile = width < 768;
+  const isPortrait = height > width;
   const largeScreen = width >= 1400;
   const areaCap = perfTier >= 3 ? 0.85 : perfTier >= 2 ? 0.95 : 1.08;
-  const areaScale = isMobile ? 1 : Math.min(areaCap, Math.sqrt((width * height) / (1920 * 1080)));
+  const mobileAreaScale = Math.min(1, Math.sqrt((width * height) / (390 * 844)));
+  const areaScale = isMobile ? mobileAreaScale : Math.min(areaCap, Math.sqrt((width * height) / (1920 * 1080)));
 
-  const lightCount = Math.round((isMobile ? 32 : 46) * areaScale);
+  const lightCount = Math.round((isMobile ? 22 : 46) * areaScale);
   for (let i = 0; i < lightCount; i++) {
-    const radius = pickLightRadius();
+    let radius = pickLightRadius();
+    if (isMobile) radius *= 0.72 + Math.random() * 0.32;
     let baseX;
     let baseY;
     const zone = Math.random();
@@ -355,14 +358,23 @@ function initBlobs() {
     { rMin: 98, rMax: 142, exMin: 1.65, exMax: 2.35, eyMin: 0.1, eyMax: 0.18, roundMin: 0.34, roundMax: 0.44 },
     { rMin: 132, rMax: 188, exMin: 0.95, exMax: 1.55, eyMin: 0.2, eyMax: 0.34, roundMin: 0.48, roundMax: 0.68 },
   ];
+  const mobileHeroProfiles = [
+    { rMin: 150, rMax: 205, exMin: 0.82, exMax: 1.12, eyMin: 0.36, eyMax: 0.52, roundMin: 0.66, roundMax: 0.84 },
+    { rMin: 120, rMax: 176, exMin: 1.55, exMax: 2.25, eyMin: 0.14, eyMax: 0.24, roundMin: 0.32, roundMax: 0.46 },
+    { rMin: 138, rMax: 190, exMin: 1.05, exMax: 1.5, eyMin: 0.24, eyMax: 0.38, roundMin: 0.48, roundMax: 0.68 },
+  ];
 
-  const heroLightCount = 3 + Math.floor(Math.random() * 3);
+  const activeHeroProfiles = isMobile ? mobileHeroProfiles : heroProfiles;
+  const heroLightCount = isMobile ? 3 : 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < heroLightCount; i++) {
-    const p = heroProfiles[i];
-    const anchorNormX = 0.18 + Math.random() * 0.64;
-    const anchorNormY = 0.18 + Math.random() * 0.64;
+    const p = activeHeroProfiles[i % activeHeroProfiles.length];
+    const anchorNormX = isMobile ? 0.12 + Math.random() * 0.76 : 0.18 + Math.random() * 0.64;
+    const anchorNormY = isMobile ? 0.16 + Math.random() * (isPortrait ? 0.62 : 0.5) : 0.18 + Math.random() * 0.64;
     const radius =
-      (p.rMin + Math.random() * (p.rMax - p.rMin)) * LIGHT_SIZE_SCALE * 1.15 * (largeScreen ? 1.08 : 1);
+      (p.rMin + Math.random() * (p.rMax - p.rMin)) *
+      LIGHT_SIZE_SCALE *
+      1.15 *
+      (isMobile ? (isPortrait ? 0.82 : 0.95) : (largeScreen ? 1.08 : 1));
     blobs.push({
       type: 'light',
       heroLight: true,
@@ -407,7 +419,7 @@ function initBlobs() {
     });
   }
 
-  const edgeCount = isMobile ? 10 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
+  const edgeCount = isMobile ? 6 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
   for (let i = 0; i < edgeCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (largeScreen ? 1.14 : 1);
@@ -451,7 +463,7 @@ function initBlobs() {
     });
   }
 
-  const bleedCount = isMobile ? 5 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
+  const bleedCount = isMobile ? 3 : (largeScreen ? (perfTier >= 3 ? 7 : 8) : 7);
   for (let i = 0; i < bleedCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (105 + Math.random() * 95) * LIGHT_SIZE_SCALE * (largeScreen ? 1.22 : 1);
@@ -504,7 +516,7 @@ function initGapPatches() {
   const isMobile = width < 768;
   const maxDist = isMobile ? 210 : 270;
   const minDist = 26;
-  const maxGapPatches = perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
+  const maxGapPatches = isMobile ? 70 : perfTier >= 3 ? 90 : perfTier >= 2 ? 130 : 180;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -532,7 +544,7 @@ function initFoliage() {
   foliage = [];
   const isMobile = width < 768;
   const foliageByTier = [20, 28, 24, 22];
-  const foliageCount = isMobile ? 20 : foliageByTier[perfTier] ?? 28;
+  const foliageCount = isMobile ? 12 : foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
     const scale = 0.65 + Math.random() * 1.05;
@@ -619,7 +631,7 @@ function initFoliage() {
 function initLightBeams() {
   lightBeams = [];
   const beamByTier = [5, 7, 6, 5];
-  const count = width < 768 ? 5 : beamByTier[perfTier] ?? 7;
+  const count = width < 768 ? 3 : beamByTier[perfTier] ?? 7;
   for (let i = 0; i < count; i++) {
     lightBeams.push({
       offset: (i / (count - 1)) * 0.46 - 0.2,
