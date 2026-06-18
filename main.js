@@ -1493,12 +1493,13 @@ function drawShadowShape(targetCtx, b, color, alphaScale = 1) {
 }
 
 function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const radius = (b.renderRadius ?? b.radius) * dpr;
   const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
-  const a = Math.min(b.strength * alphaScale, 1.2);
+  const a = Math.min(b.strength * alphaScale * (isMobile ? 0.72 : 1), isMobile ? 0.72 : 1.2);
   const rs = radiusScale;
 
   targetCtx.save();
@@ -1514,10 +1515,10 @@ function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
     cx, cy, radius * 0.02 * rs,
     cx * 0.12, cy * 0.12, radius * 1.16 * rs
   );
-  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * 1.05, 1)})`);
-  grad.addColorStop(0.22, `rgba(255,255,255,${a * 0.78})`);
-  grad.addColorStop(0.5, `rgba(255,255,255,${a * 0.38})`);
-  grad.addColorStop(0.76, `rgba(255,255,255,${a * 0.12})`);
+  grad.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.76 : 1.05), 1)})`);
+  grad.addColorStop(isMobile ? 0.3 : 0.22, `rgba(255,255,255,${a * (isMobile ? 0.56 : 0.78)})`);
+  grad.addColorStop(isMobile ? 0.62 : 0.5, `rgba(255,255,255,${a * (isMobile ? 0.24 : 0.38)})`);
+  grad.addColorStop(isMobile ? 0.86 : 0.76, `rgba(255,255,255,${a * (isMobile ? 0.06 : 0.12)})`);
   grad.addColorStop(1, 'rgba(255,255,255,0)');
 
   targetCtx.beginPath();
@@ -1626,12 +1627,16 @@ function drawGapShadowBoost(targetCtx) {
 }
 
 function drawLightBlob(targetCtx, b, alphaScale = 1) {
+  const isMobile = width < MOBILE_BREAKPOINT;
   const radius = (b.renderRadius ?? b.radius) * dpr;
   const tilt = SUN_ANGLE + (b.tiltVariation ?? 0);
   const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
-  const a = Math.min(b.strength * alphaScale * lightBrightBoost, 1.32);
+  const a = Math.min(
+    b.strength * alphaScale * lightBrightBoost * (isMobile ? 0.78 : 1),
+    isMobile ? 0.92 : 1.32
+  );
   const { r, g, b: bv } = LIGHT;
 
   targetCtx.save();
@@ -1644,9 +1649,9 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const cy = -radius * 0.15;
 
   const glow = targetCtx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius * 1.55);
-  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * 0.52, 1)})`);
-  glow.addColorStop(0.35, `rgba(255,252,246,${a * 0.26})`);
-  glow.addColorStop(0.65, `rgba(255,250,240,${a * 0.1})`);
+  glow.addColorStop(0, `rgba(255,255,255,${Math.min(a * (isMobile ? 0.36 : 0.52), 1)})`);
+  glow.addColorStop(0.35, `rgba(255,252,246,${a * (isMobile ? 0.18 : 0.26)})`);
+  glow.addColorStop(0.65, `rgba(255,250,240,${a * (isMobile ? 0.07 : 0.1)})`);
   glow.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.globalCompositeOperation = 'lighter';
   targetCtx.beginPath();
@@ -1674,14 +1679,16 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   targetCtx.fillStyle = grad;
   targetCtx.fill();
 
-  const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
-  targetCtx.globalCompositeOperation = 'lighter';
-  targetCtx.beginPath();
-  targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
-  targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
-  targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
-  targetCtx.lineCap = 'round';
-  targetCtx.stroke();
+  if (!isMobile) {
+    const edgeAlpha = Math.min(a * (b.heroLight ? 0.3 : 0.18), 0.36);
+    targetCtx.globalCompositeOperation = 'lighter';
+    targetCtx.beginPath();
+    targetCtx.ellipse(0, 0, radius * 0.98, radius * round * 0.98, 0, Math.PI * 1.08, Math.PI * 1.82);
+    targetCtx.strokeStyle = `rgba(255,255,255,${edgeAlpha})`;
+    targetCtx.lineWidth = Math.max(1.1 * dpr, radius * 0.014);
+    targetCtx.lineCap = 'round';
+    targetCtx.stroke();
+  }
 
   targetCtx.save();
   targetCtx.beginPath();
@@ -1793,9 +1800,9 @@ function drawLightMap() {
   endBufferDraw(lightRawCtx);
 
   const maskFilter = isMobile
-    ? `brightness(${1.02 + (1 - renderScale) * 0.08}) contrast(2.15)`
+    ? `brightness(${0.98 + (1 - renderScale) * 0.06}) contrast(1.55)`
     : `brightness(${1.14 + (1 - renderScale) * 0.12}) contrast(3.8)`;
-  blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.32 : BLUR_MASK, maskFilter);
+  blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.55 : BLUR_MASK, maskFilter);
 }
 
 function drawWall() {
