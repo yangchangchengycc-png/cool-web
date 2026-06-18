@@ -74,7 +74,6 @@ let edgeFeatherSpots = [];
 let clusterGlows = [];
 let dustParticles = [];
 let lightBeams = [];
-let transientTyndallBeam = null;
 let textItems = [];
 let grainPattern = null;
 let frostPattern = null;
@@ -763,118 +762,6 @@ function drawDust(time) {
   }
 }
 
-function smoothStep01(value) {
-  const t = Math.max(0, Math.min(value, 1));
-  return t * t * (3 - 2 * t);
-}
-
-function pickTransientBeamTarget() {
-  const heroes = cachedLightBlobs.filter((b) => b.heroLight);
-  if (!heroes.length) return null;
-  const leftHeroes = heroes.filter((b) => b.renderX < canvas.width * 0.68);
-  const candidates = leftHeroes.length ? leftHeroes : heroes;
-  return candidates[Math.floor(Math.random() * candidates.length)];
-}
-
-function updateTransientTyndallBeam(time) {
-  if (prefersReducedMotion) return;
-
-  if (!transientTyndallBeam) {
-    transientTyndallBeam = {
-      target: null,
-      startAt: 0,
-      endAt: 0,
-      nextAt: time + 900 + Math.random() * 1800,
-      sourceX: -0.08,
-      sourceY: -0.1,
-      widthScale: 1,
-    };
-  }
-
-  if (transientTyndallBeam.target && time >= transientTyndallBeam.endAt) {
-    transientTyndallBeam.target = null;
-    transientTyndallBeam.nextAt = time + 900 + Math.random() * 2600;
-  }
-
-  if (!transientTyndallBeam.target && time >= transientTyndallBeam.nextAt) {
-    const target = pickTransientBeamTarget();
-    if (!target) return;
-
-    transientTyndallBeam.target = target;
-    transientTyndallBeam.startAt = time;
-    transientTyndallBeam.endAt = time + 5000;
-    transientTyndallBeam.sourceX = 1.04 + Math.random() * 0.08;
-    transientTyndallBeam.sourceY = -0.12 + Math.random() * 0.08;
-    transientTyndallBeam.widthScale = 0.9 + Math.random() * 0.42;
-  }
-}
-
-function drawTransientTyndallBeam(time) {
-  updateTransientTyndallBeam(time);
-  const beam = transientTyndallBeam;
-  if (!beam?.target) return;
-
-  const target = beam.target;
-  const age = time - beam.startAt;
-  const duration = beam.endAt - beam.startAt;
-  const fadeIn = smoothStep01(age / 650);
-  const fadeOut = 1 - smoothStep01((age - duration + 900) / 900);
-  const alpha = Math.max(0, Math.min(fadeIn, fadeOut));
-  if (alpha <= 0) return;
-
-  const w = canvas.width;
-  const h = canvas.height;
-  const sx = w * beam.sourceX;
-  const sy = h * beam.sourceY;
-  const tx = target.renderX;
-  const ty = target.renderY;
-  const dx = tx - sx;
-  const dy = ty - sy;
-  const len = Math.hypot(dx, dy);
-  if (len < 1) return;
-
-  const nx = dx / len;
-  const ny = dy / len;
-  const px = -ny;
-  const py = nx;
-  const endX = tx + nx * Math.min(len * 0.28, 260 * dpr);
-  const endY = ty + ny * Math.min(len * 0.28, 260 * dpr);
-  const beamWidth = Math.max(42 * dpr, Math.min(w, h) * 0.09 * beam.widthScale);
-
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-
-  const layers = [
-    { width: 1.45, alpha: 0.06, blur: 26 },
-    { width: 0.86, alpha: 0.11, blur: 16 },
-    { width: 0.42, alpha: 0.08, blur: 8 },
-  ];
-
-  for (const layer of layers) {
-    const halfWidth = beamWidth * layer.width;
-    const sourceWidth = halfWidth * 0.2;
-    const fill = ctx.createLinearGradient(sx, sy, endX, endY);
-    fill.addColorStop(0, `rgba(255,255,255,${layer.alpha * 0.32 * alpha})`);
-    fill.addColorStop(0.2, `rgba(255,252,244,${layer.alpha * alpha})`);
-    fill.addColorStop(0.62, `rgba(255,247,232,${layer.alpha * 0.74 * alpha})`);
-    fill.addColorStop(1, `rgba(255,255,255,${layer.alpha * 0.12 * alpha})`);
-
-    ctx.filter = `blur(${layer.blur * dpr}px)`;
-    ctx.beginPath();
-    ctx.moveTo(sx + px * sourceWidth, sy + py * sourceWidth);
-    ctx.lineTo(sx - px * sourceWidth, sy - py * sourceWidth);
-    ctx.lineTo(endX - px * halfWidth, endY - py * halfWidth);
-    ctx.lineTo(endX + px * halfWidth, endY + py * halfWidth);
-    ctx.closePath();
-    ctx.fillStyle = fill;
-    ctx.fill();
-  }
-
-  ctx.filter = 'none';
-
-  ctx.restore();
-}
-
 function drawTyndallEffect(time) {
   if (renderFrame % 3 === 0) drawGodRays(time);
   updateDust(time);
@@ -889,7 +776,6 @@ function drawTyndallEffect(time) {
   ctx.globalAlpha = 1;
 
   ctx.globalCompositeOperation = 'lighter';
-  drawTransientTyndallBeam(time);
   drawDust(time);
   ctx.globalCompositeOperation = 'source-over';
 }
