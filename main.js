@@ -1884,6 +1884,117 @@ function drawMaskedText() {
   textCtx.globalCompositeOperation = 'source-over';
 }
 
+function getMobileLightSources() {
+  const heroes = cachedLightBlobs.filter((b) => b.heroLight);
+  return heroes.length ? heroes : cachedLightBlobs.slice(0, 3);
+}
+
+function drawMobileSoftLight(targetCtx, b, scale = 1, alphaScale = 1) {
+  const radius = (b.renderRadius ?? b.radius) * dpr * scale;
+  const tilt = MOBILE_SUN_ANGLE + (b.tiltVariation ?? 0);
+  const ex = (b.ellipseX ?? 1) * (b.renderRx ?? 1);
+  const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
+  const round = b.ellipseRound ?? 0.65;
+  const strength = Math.min((b.strength ?? 0.7) * alphaScale, 1);
+
+  targetCtx.save();
+  targetCtx.translate(b.renderX, b.renderY);
+  targetCtx.rotate(tilt);
+  targetCtx.transform(1, 0, MOBILE_PERSP_SKEW, 0.9, 0, radius * 0.04);
+  targetCtx.scale(ex, ey);
+
+  const grad = targetCtx.createRadialGradient(
+    -radius * 0.18, -radius * 0.12, radius * 0.04,
+    0, 0, radius
+  );
+  grad.addColorStop(0, `rgba(255,255,255,${0.58 * strength})`);
+  grad.addColorStop(0.22, `rgba(255,253,248,${0.38 * strength})`);
+  grad.addColorStop(0.48, `rgba(255,249,238,${0.2 * strength})`);
+  grad.addColorStop(0.74, `rgba(255,246,232,${0.075 * strength})`);
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+
+  targetCtx.fillStyle = grad;
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, radius, radius * round, 0, 0, Math.PI * 2);
+  targetCtx.fill();
+  targetCtx.restore();
+}
+
+function drawMobileBackdrop(time) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const lights = getMobileLightSources();
+
+  wallCtx.fillStyle = WALL;
+  wallCtx.fillRect(0, 0, w, h);
+
+  if (grainPattern) {
+    wallCtx.fillStyle = grainPattern;
+    wallCtx.globalAlpha = 0.32;
+    wallCtx.fillRect(0, 0, w, h);
+    wallCtx.globalAlpha = 1;
+  }
+
+  const ambient = wallCtx.createLinearGradient(w * 0.98, -h * 0.08, -w * 0.12, h * 1.05);
+  ambient.addColorStop(0, 'rgba(255,255,255,0.34)');
+  ambient.addColorStop(0.35, 'rgba(238,235,226,0.08)');
+  ambient.addColorStop(0.72, 'rgba(176,174,168,0.06)');
+  ambient.addColorStop(1, 'rgba(255,255,255,0.18)');
+  wallCtx.fillStyle = ambient;
+  wallCtx.fillRect(0, 0, w, h);
+
+  wallCtx.save();
+  wallCtx.globalCompositeOperation = 'multiply';
+  wallCtx.globalAlpha = 0.12;
+  const t = time * 0.00025;
+  for (let i = 0; i < 3; i++) {
+    const offset = (i - 1) * w * 0.28 + Math.sin(t + i) * w * 0.04;
+    const band = wallCtx.createLinearGradient(w * 0.95 + offset, -h * 0.15, -w * 0.15 + offset, h * 1.05);
+    band.addColorStop(0, 'rgba(190,188,182,0)');
+    band.addColorStop(0.42, 'rgba(160,158,150,0.16)');
+    band.addColorStop(0.58, 'rgba(160,158,150,0.08)');
+    band.addColorStop(1, 'rgba(190,188,182,0)');
+    wallCtx.fillStyle = band;
+    wallCtx.fillRect(0, 0, w, h);
+  }
+  wallCtx.restore();
+
+  wallCtx.save();
+  wallCtx.globalCompositeOperation = 'screen';
+  for (const light of lights) {
+    drawMobileSoftLight(wallCtx, light, 2.35, 0.58);
+    drawMobileSoftLight(wallCtx, light, 1.28, 0.82);
+  }
+  if (pointerOnScreen) drawMobileSoftLight(wallCtx, getCursorLightBlob(), 1.65, 0.72);
+  wallCtx.restore();
+}
+
+function drawMobileLightMap() {
+  lightCtx.clearRect(0, 0, canvas.width, canvas.height);
+  lightCtx.globalCompositeOperation = 'lighter';
+
+  for (const light of getMobileLightSources()) {
+    drawMobileSoftLight(lightCtx, light, 2.1, 0.86);
+    drawMobileSoftLight(lightCtx, light, 1.08, 0.68);
+  }
+  if (pointerOnScreen) drawMobileSoftLight(lightCtx, getCursorLightBlob(), 1.55, 0.75);
+
+  lightCtx.globalCompositeOperation = 'source-over';
+}
+
+function renderMobileScene(time) {
+  updateWind(time);
+  updateCursorLight(time);
+  updateBlobs(time);
+  drawMobileBackdrop(time);
+  drawMobileLightMap();
+  drawMaskedText();
+
+  ctx.drawImage(wallCanvas, 0, 0);
+  ctx.drawImage(textCanvas, 0, 0);
+  drawFrostOverlay();
+}
+
 function render(time) {
   if (time - lastRenderAt < TARGET_FRAME_MS) {
     requestAnimationFrame(render);
@@ -1896,6 +2007,12 @@ function render(time) {
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
+
+  if (width < MOBILE_BREAKPOINT) {
+    renderMobileScene(time);
+    requestAnimationFrame(render);
+    return;
+  }
 
   updateWind(time);
   updateCursorLight(time);
