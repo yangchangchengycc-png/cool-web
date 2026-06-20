@@ -104,6 +104,7 @@ let grainPattern = null;
 let frostPattern = null;
 let scatterLayoutItems = [];
 let hoveredTextEl = null;
+let hoveredTextLightRect = null;
 const textHoverScale = new WeakMap();
 let pointerClientX = 0;
 let pointerClientY = 0;
@@ -911,12 +912,60 @@ function layoutScatterItems() {
 
   const isMobile = width < MOBILE_BREAKPOINT;
   const anchors = buildScatterAnchors(items.length, isMobile);
-  scatterLayoutItems = items.map((el, index) => {
-    const anchor = anchors[index % anchors.length];
-    const jitterX = (Math.random() - 0.5) * (isMobile ? 0.1 : 0.12);
-    const jitterY = (Math.random() - 0.5) * (isMobile ? 0.08 : 0.1);
-    const x = Math.max(0.06, Math.min(0.86, anchor.x + jitterX));
-    const y = Math.max(0.12, Math.min(0.84, anchor.y + jitterY));
+  const placedRects = [];
+  const gap = isMobile ? 22 : 34;
+  const orderedItems = [...items].sort((a, b) => {
+    const aText = a.querySelector('.project__title')?.textContent?.length ?? 0;
+    const bText = b.querySelector('.project__title')?.textContent?.length ?? 0;
+    return bText - aText;
+  });
+
+  function inflateRect(rect, amount) {
+    return {
+      left: rect.left - amount,
+      right: rect.right + amount,
+      top: rect.top - amount,
+      bottom: rect.bottom + amount,
+    };
+  }
+
+  function rectsOverlap(a, b) {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
+
+  scatterLayoutItems = orderedItems.map((el, index) => {
+    const title = el.querySelector('.project__title') || el;
+    const titleRect = title.getBoundingClientRect();
+    const maxX = Math.max(0.06, 0.94 - titleRect.width / Math.max(width, 1));
+    const maxY = Math.max(0.12, 0.88 - titleRect.height / Math.max(height, 1));
+    let x = 0.5;
+    let y = 0.5;
+    let chosenRect = null;
+
+    for (let attempt = 0; attempt < 96; attempt++) {
+      const anchor = anchors[(index + attempt) % anchors.length];
+      const jitterX = (Math.random() - 0.5) * (isMobile ? 0.18 : 0.22);
+      const jitterY = (Math.random() - 0.5) * (isMobile ? 0.14 : 0.18);
+      const candidateX = Math.max(0.06, Math.min(maxX, anchor.x + jitterX));
+      const candidateY = Math.max(0.12, Math.min(maxY, anchor.y + jitterY));
+
+      el.style.left = `${candidateX * 100}%`;
+      el.style.top = `${candidateY * 100}%`;
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.style.transform = 'translate3d(0, 0, 0)';
+
+      const candidateRect = inflateRect(title.getBoundingClientRect(), gap);
+      const overlaps = placedRects.some((rect) => rectsOverlap(candidateRect, rect));
+      if (!overlaps || attempt === 95) {
+        x = candidateX;
+        y = candidateY;
+        chosenRect = candidateRect;
+        break;
+      }
+    }
+
+    if (chosenRect) placedRects.push(chosenRect);
     const phase = Math.random() * Math.PI * 2;
 
     el.style.left = `${x * 100}%`;
@@ -929,8 +978,8 @@ function layoutScatterItems() {
       x,
       y,
       phase,
-      ampX: (isMobile ? 3 : 5) + Math.random() * (isMobile ? 3 : 5),
-      ampY: (isMobile ? 2 : 3) + Math.random() * (isMobile ? 2 : 4),
+      ampX: (isMobile ? 1.5 : 2.5) + Math.random() * (isMobile ? 1.8 : 2.5),
+      ampY: (isMobile ? 1.2 : 2) + Math.random() * (isMobile ? 1.6 : 2.5),
       speed: 0.00018 + Math.random() * 0.00018,
     };
   });
@@ -1226,18 +1275,35 @@ function updateWind(time) {
 
 function updateCursorLight(time) {
   const t = time * 0.001;
-  cursorLight.renderX = smoothMouse.x * canvas.width;
-  cursorLight.renderY = smoothMouse.y * canvas.height;
+  const hoverRect = hoveredTextLightRect;
+  cursorLight.renderX = hoverRect
+    ? (hoverRect.left + hoverRect.width * 0.5) * dpr
+    : smoothMouse.x * canvas.width;
+  cursorLight.renderY = hoverRect
+    ? (hoverRect.top + hoverRect.height * 0.5) * dpr
+    : smoothMouse.y * canvas.height;
 
   const sizePulse =
     1 +
     Math.sin(t * cursorLight.sizeFreq) * cursorLight.sizeAmp +
     Math.sin(t * cursorLight.sizeFreq * 1.7) * cursorLight.sizeAmp * 0.45;
-  cursorLight.renderRadius = cursorLight.baseRadius * sizePulse;
+  const hoverRadius = hoverRect
+    ? Math.max(
+        cursorLight.baseRadius,
+        hoverRect.width * (width < MOBILE_BREAKPOINT ? 0.7 : 0.56) + 92,
+        hoverRect.height * 4.5
+      )
+    : cursorLight.baseRadius;
+  cursorLight.renderRadius = hoverRadius * sizePulse;
 
   const breathe = pointerOnScreen ? 0.12 : 0.08;
-  cursorLight.renderRx = 0.86 + Math.sin(t * 0.9) * breathe;
-  cursorLight.renderRy = 0.86 + Math.cos(t * 0.75) * breathe;
+  if (hoverRect) {
+    cursorLight.renderRx = Math.min(1.45, Math.max(1.08, 1 + hoverRect.width / Math.max(hoverRadius * 4.2, 1)));
+    cursorLight.renderRy = 0.72 + Math.cos(t * 0.75) * 0.04;
+  } else {
+    cursorLight.renderRx = 0.86 + Math.sin(t * 0.9) * breathe;
+    cursorLight.renderRy = 0.86 + Math.cos(t * 0.75) * breathe;
+  }
 }
 
 function getCursorLightBlob() {
@@ -2191,9 +2257,20 @@ function drawWall() {
   drawEdgeWallGlow();
 }
 
+function getTextHoverTargetRect(el) {
+  if (!el) return null;
+  const target = el.classList.contains('roll-item')
+    ? el
+    : el.querySelector('.project__title') || el.querySelector('.project__link') || el;
+  const rect = target.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return rect;
+}
+
 function updateHoveredTextFromPointer(clientX, clientY) {
   if (!pointerOnScreen) {
     hoveredTextEl = null;
+    hoveredTextLightRect = null;
     return;
   }
 
@@ -2208,6 +2285,7 @@ function updateHoveredTextFromPointer(clientX, clientY) {
       : 0;
     if (viewportOpen <= 0.01) {
       hoveredTextEl = null;
+      hoveredTextLightRect = null;
       return;
     }
 
@@ -2251,6 +2329,7 @@ function updateHoveredTextFromPointer(clientX, clientY) {
   }
 
   hoveredTextEl = hit;
+  hoveredTextLightRect = getTextHoverTargetRect(hit);
 }
 
 function getTextHoverScale(sourceEl) {
@@ -2518,11 +2597,11 @@ function renderMobileScene(time) {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
   updateWind(time);
+  updateHoveredTextFromPointer(pointerClientX, pointerClientY);
   updateCursorLight(time);
   updateBlobs(time);
   drawMobileBackdrop(time);
   drawMobileLightMap();
-  updateHoveredTextFromPointer(pointerClientX, pointerClientY);
   drawMaskedText();
 
   ctx.drawImage(wallCanvas, 0, 0);
@@ -2552,6 +2631,7 @@ function render(time) {
     measureTextItems();
     lastDynamicTextMeasureAt = time;
   }
+  updateHoveredTextFromPointer(pointerClientX, pointerClientY);
 
   if (width < MOBILE_BREAKPOINT) {
     renderMobileScene(time);
@@ -2566,7 +2646,6 @@ function render(time) {
   drawLightBokehLayer(time);
   drawLightMap(time, recentlyMoved);
   drawWall();
-  updateHoveredTextFromPointer(pointerClientX, pointerClientY);
   drawMaskedText();
 
   ctx.drawImage(wallCanvas, 0, 0);
@@ -2595,6 +2674,7 @@ function onPointerEnter() {
 function onPointerLeave() {
   pointerOnScreen = false;
   hoveredTextEl = null;
+  hoveredTextLightRect = null;
   mouse.targetX = 0.5;
   mouse.targetY = 0.5;
 }
