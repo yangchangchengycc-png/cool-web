@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css?v=20260620-1436">
+  <link rel="stylesheet" href="../styles.css?v=20260620-1448">
 </head>
 <body class="layout-work">
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -32,7 +32,7 @@
     </section>
   </main>
 
-  <script src="../main.js?v=20260620-1436" defer></script>
+  <script src="../main.js?v=20260620-1448" defer></script>
   <script>
     const rollProjects = [
       { title: 'precarious force', href: 'view.html#precarious-force' },
@@ -50,10 +50,16 @@
     let rollOffset = 0;
     let rollTarget = 0;
     let rollHovered = false;
-    let wheelLocked = false;
     let rollOpen = 0;
     let rollOpenTarget = 0;
     let rollItems = [];
+    let wheelRemainder = 0;
+    let lastWheelAt = 0;
+    let lastWheelStepAt = 0;
+    const WHEEL_STEP_SIZE = 520;
+    const WHEEL_EVENT_CAP = 120;
+    const WHEEL_STEP_PAUSE = 190;
+    const WHEEL_IDLE_RESET = 280;
 
     function renderRoll() {
       const center = (rollProjects.length - 1) / 2;
@@ -67,7 +73,7 @@
     }
 
     function updateRoll(time) {
-      rollOffset += (rollTarget - rollOffset) * 0.22;
+      rollOffset += (rollTarget - rollOffset) * 0.18;
       rollOpen += (rollOpenTarget - rollOpen) * 0.12;
       viewport.dataset.open = rollOpen.toFixed(3);
       const count = rollItems.length;
@@ -117,14 +123,22 @@
     roll.addEventListener('wheel', (event) => {
       if (!rollHovered) return;
       event.preventDefault();
-      if (wheelLocked) return;
 
-      const direction = event.deltaY > 0 ? 1 : -1;
+      const now = performance.now();
+      const modeScale = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? window.innerHeight : 1;
+      const normalizedDelta = event.deltaY * modeScale;
+      const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), WHEEL_EVENT_CAP);
+
+      if (now - lastWheelAt > WHEEL_IDLE_RESET) wheelRemainder = 0;
+      lastWheelAt = now;
+      wheelRemainder += cappedDelta;
+
+      if (Math.abs(wheelRemainder) < WHEEL_STEP_SIZE || now - lastWheelStepAt < WHEEL_STEP_PAUSE) return;
+
+      const direction = wheelRemainder > 0 ? 1 : -1;
       rollTarget += direction;
-      wheelLocked = true;
-      window.setTimeout(() => {
-        wheelLocked = false;
-      }, 220);
+      wheelRemainder -= direction * WHEEL_STEP_SIZE;
+      lastWheelStepAt = now;
     }, { passive: false });
 
     renderRoll();

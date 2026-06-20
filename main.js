@@ -173,15 +173,15 @@ function updatePerfProfile() {
     dpr = Math.min(rawDpr, 1.1);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.42;
+    renderScale = 0.38;
     dpr = Math.min(rawDpr, 1);
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.52;
+    renderScale = 0.48;
     dpr = Math.min(rawDpr, 1);
   } else {
     perfTier = 1;
-    renderScale = 0.62;
+    renderScale = 0.58;
     dpr = Math.min(rawDpr, 1.05);
   }
 
@@ -565,7 +565,7 @@ function initGapPatches() {
 
   const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 32 : perfTier >= 3 ? 58 : perfTier >= 2 ? 82 : 108;
+  const maxGapPatches = isMobile ? 32 : perfTier >= 3 ? 48 : perfTier >= 2 ? 68 : 92;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -594,7 +594,7 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [20, 22, 19, 17];
+  const foliageByTier = [20, 20, 17, 15];
   const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
