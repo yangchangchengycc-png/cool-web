@@ -830,13 +830,13 @@ function drawTyndallEffect(time) {
   if (!skipFx && perfTier < 3) {
     ctx.globalCompositeOperation = 'lighter';
     drawDust(time);
-    ctx.globalCompositeOperation = 'source-over';
   }
+
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
 }
 
 function drawFrostOverlay() {
-  if (perfTier >= 2 && renderFrame % 2 !== 0) return;
-
   const w = canvas.width;
   const h = canvas.height;
   if (!frostPattern && !grainPattern) return;
@@ -1934,7 +1934,7 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
 function getOpenRollRect() {
   if (cachedOpenRollFrame === renderFrame) return cachedOpenRollRect;
 
-  const roll = document.querySelector('.work-roll.is-open');
+  const roll = document.querySelector('.work-roll');
   if (!roll) {
     cachedOpenRollFrame = renderFrame;
     cachedOpenRollRect = null;
@@ -2515,6 +2515,8 @@ function drawMobileLightMap() {
 }
 
 function renderMobileScene(time) {
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   updateWind(time);
   updateCursorLight(time);
   updateBlobs(time);
@@ -2539,6 +2541,8 @@ function render(time) {
   renderFrame += 1;
   cachedOpenRollFrame = -1;
   cachedCanvasRectFrame = -1;
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   const recentlyMoved = time - lastPointerMove < 120;
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
