@@ -6,6 +6,13 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const scriptBase = new URL('.', document.currentScript?.src || window.location.href);
+const paperTexture = new Image();
+let paperTextureReady = false;
+paperTexture.onload = () => {
+  paperTextureReady = true;
+};
+paperTexture.src = new URL('assets/paper-texture.png', scriptBase).href;
 
 let width = 0;
 let height = 0;
@@ -2269,14 +2276,39 @@ function drawMobileAmbientLightBlend() {
   wallCtx.restore();
 }
 
+function drawPaperTexture(targetCtx, w, h, alpha = 1) {
+  targetCtx.fillStyle = WALL;
+  targetCtx.fillRect(0, 0, w, h);
+  if (!paperTextureReady || !paperTexture.naturalWidth || !paperTexture.naturalHeight) return;
+
+  const imgRatio = paperTexture.naturalWidth / paperTexture.naturalHeight;
+  const targetRatio = w / h;
+  let sx = 0;
+  let sy = 0;
+  let sw = paperTexture.naturalWidth;
+  let sh = paperTexture.naturalHeight;
+
+  if (imgRatio > targetRatio) {
+    sw = paperTexture.naturalHeight * targetRatio;
+    sx = (paperTexture.naturalWidth - sw) * 0.5;
+  } else {
+    sh = paperTexture.naturalWidth / targetRatio;
+    sy = (paperTexture.naturalHeight - sh) * 0.5;
+  }
+
+  targetCtx.save();
+  targetCtx.globalAlpha = alpha;
+  targetCtx.drawImage(paperTexture, sx, sy, sw, sh, 0, 0, w, h);
+  targetCtx.restore();
+}
+
 function drawWall() {
   const isMobile = width < MOBILE_BREAKPOINT;
-  wallCtx.fillStyle = WALL;
-  wallCtx.fillRect(0, 0, canvas.width, canvas.height);
+  drawPaperTexture(wallCtx, canvas.width, canvas.height);
 
   if (grainPattern) {
     wallCtx.fillStyle = grainPattern;
-    wallCtx.globalAlpha = 0.55;
+    wallCtx.globalAlpha = paperTextureReady ? 0.2 : 0.55;
     wallCtx.fillRect(0, 0, canvas.width, canvas.height);
     wallCtx.globalAlpha = 1;
   }
@@ -2576,12 +2608,11 @@ function drawMobileBackdrop(time) {
   const h = canvas.height;
   const lights = getMobileLightSources();
 
-  wallCtx.fillStyle = WALL;
-  wallCtx.fillRect(0, 0, w, h);
+  drawPaperTexture(wallCtx, w, h);
 
   if (grainPattern) {
     wallCtx.fillStyle = grainPattern;
-    wallCtx.globalAlpha = 0.32;
+    wallCtx.globalAlpha = paperTextureReady ? 0.16 : 0.32;
     wallCtx.fillRect(0, 0, w, h);
     wallCtx.globalAlpha = 1;
   }

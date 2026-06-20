@@ -22,6 +22,9 @@ body {
   min-height: 100svh;
   overflow-x: hidden;
   background: var(--wall);
+  background-image: url('assets/paper-texture.png');
+  background-size: cover;
+  background-position: center;
   color: var(--text);
   font-family: 'Noto Sans SC', system-ui, sans-serif;
   font-weight: 300;
@@ -326,6 +329,9 @@ body {
   min-height: 100svh;
   overflow: hidden;
   background: var(--wall);
+  background-image: url('assets/paper-texture.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .minimal-header {
