@@ -8,9 +8,9 @@
 
 :root {
   --wall: #ebe9e4;
-  --text: #000000;
-  --text-muted: rgba(0, 0, 0, 0.45);
-  --header-fg: rgba(0, 0, 0, 0.7);
+  --text: #2a2a28;
+  --text-muted: rgba(42, 42, 40, 0.45);
+  --header-fg: rgba(42, 42, 40, 0.7);
 }
 
 html {
@@ -348,7 +348,7 @@ body {
 .minimal-nav a,
 .scatter-item .project__link,
 .detail-back {
-  color: #000;
+  color: var(--text-muted);
   text-decoration: none;
 }
 
@@ -383,11 +383,6 @@ body {
 .scatter-item .project__link {
   display: inline-block;
   padding: 0;
-  transition: opacity 180ms ease;
-}
-
-.scatter-item .project__link:hover {
-  opacity: 0.42;
 }
 
 .scatter-item .project__title {
@@ -604,8 +599,9 @@ body {
 .roll-item {
   position: absolute;
   top: 50%;
-  left: 0;
-  min-width: 100%;
+  left: 50%;
+  width: max-content;
+  max-width: min(92vw, 40rem);
   color: transparent;
   font-size: clamp(1rem, 1.45vw, 1.42rem);
   line-height: 1;
@@ -614,10 +610,6 @@ body {
   white-space: nowrap;
   transform-origin: center center;
   will-change: transform, opacity, letter-spacing;
-}
-
-.roll-item:hover {
-  opacity: 1 !important;
 }
 
 .detail-main {

@@ -92,7 +92,7 @@
         const drift = Math.sin(phase + index * 0.72) * (1.2 + depth * 1.4);
         const z = Math.round(depth * 100);
 
-        item.style.transform = `translate3d(${drift}px, ${y}px, ${z}px) scale(${scaleX}, ${scaleY})`;
+        item.style.transform = `translate3d(calc(-50% + ${drift}px), calc(-50% + ${y}px), ${z}px) scale(${scaleX}, ${scaleY})`;
         item.style.opacity = opacity.toFixed(3);
         item.style.letterSpacing = `${tracking}em`;
         item.style.zIndex = String(Math.round(depth * 1000));
