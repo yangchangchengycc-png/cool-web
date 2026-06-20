@@ -17,6 +17,7 @@ let perfTier = 1;
 let lightBrightBoost = 1;
 let renderFrame = 0;
 let lastRenderAt = 0;
+let lastDynamicTextMeasureAt = 0;
 
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
 
@@ -369,10 +370,12 @@ function initBlobs() {
     const p = activeHeroProfiles[i % activeHeroProfiles.length];
     const anchorNormX = 0.18 + Math.random() * 0.64;
     const anchorNormY = 0.18 + Math.random() * 0.64;
+    const heroSizeBoost = 1.15 + Math.random() * 0.15;
     const radius =
       (p.rMin + Math.random() * (p.rMax - p.rMin)) *
       LIGHT_SIZE_SCALE *
       1.15 *
+      heroSizeBoost *
       (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.08 : 1));
     blobs.push({
       type: 'light',
@@ -2354,7 +2357,11 @@ function render(time) {
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
-  if (updateScatterMotion(time)) measureTextItems();
+  const dynamicTextChanged = updateScatterMotion(time) || !!document.querySelector('.roll-item');
+  if (dynamicTextChanged && time - lastDynamicTextMeasureAt > 66) {
+    measureTextItems();
+    lastDynamicTextMeasureAt = time;
+  }
 
   if (width < MOBILE_BREAKPOINT) {
     renderMobileScene(time);
@@ -2365,7 +2372,6 @@ function render(time) {
   updateWind(time);
   updateCursorLight(time);
   updateBlobs(time);
-  if (document.querySelector('.roll-item')) measureTextItems();
   drawShadowLayer();
   drawLightBokehLayer();
   drawLightMap();
