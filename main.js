@@ -140,6 +140,22 @@ const cursorLight = {
   ellipseRound: 0.62,
 };
 
+const hoverTextLight = {
+  active: false,
+  opacity: 0,
+  targetX: 0,
+  targetY: 0,
+  renderX: 0,
+  renderY: 0,
+  targetRadius: 190 * LIGHT_SIZE_SCALE,
+  renderRadius: 190 * LIGHT_SIZE_SCALE,
+  strength: 1.9,
+  tiltVariation: 0.02,
+  ellipseX: 1.42,
+  ellipseY: 0.5,
+  ellipseRound: 0.6,
+};
+
 function createOffscreen(w, h) {
   const c = document.createElement('canvas');
   c.width = w;
@@ -157,16 +173,16 @@ function updatePerfProfile() {
     dpr = Math.min(rawDpr, 1.1);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.48;
+    renderScale = 0.42;
     dpr = Math.min(rawDpr, 1);
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.58;
-    dpr = Math.min(rawDpr, 1.08);
+    renderScale = 0.52;
+    dpr = Math.min(rawDpr, 1);
   } else {
     perfTier = 1;
-    renderScale = 0.68;
-    dpr = Math.min(rawDpr, 1.15);
+    renderScale = 0.62;
+    dpr = Math.min(rawDpr, 1.05);
   }
 
   if (prefersReducedMotion) {
@@ -549,7 +565,7 @@ function initGapPatches() {
 
   const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 32 : perfTier >= 3 ? 72 : perfTier >= 2 ? 100 : 130;
+  const maxGapPatches = isMobile ? 32 : perfTier >= 3 ? 58 : perfTier >= 2 ? 82 : 108;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -578,7 +594,7 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [20, 24, 22, 20];
+  const foliageByTier = [20, 22, 19, 17];
   const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
@@ -1275,35 +1291,18 @@ function updateWind(time) {
 
 function updateCursorLight(time) {
   const t = time * 0.001;
-  const hoverRect = hoveredTextLightRect;
-  cursorLight.renderX = hoverRect
-    ? (hoverRect.left + hoverRect.width * 0.5) * dpr
-    : smoothMouse.x * canvas.width;
-  cursorLight.renderY = hoverRect
-    ? (hoverRect.top + hoverRect.height * 0.5) * dpr
-    : smoothMouse.y * canvas.height;
+  cursorLight.renderX = smoothMouse.x * canvas.width;
+  cursorLight.renderY = smoothMouse.y * canvas.height;
 
   const sizePulse =
     1 +
     Math.sin(t * cursorLight.sizeFreq) * cursorLight.sizeAmp +
     Math.sin(t * cursorLight.sizeFreq * 1.7) * cursorLight.sizeAmp * 0.45;
-  const hoverRadius = hoverRect
-    ? Math.max(
-        cursorLight.baseRadius,
-        hoverRect.width * (width < MOBILE_BREAKPOINT ? 0.7 : 0.56) + 92,
-        hoverRect.height * 4.5
-      )
-    : cursorLight.baseRadius;
-  cursorLight.renderRadius = hoverRadius * sizePulse;
+  cursorLight.renderRadius = cursorLight.baseRadius * sizePulse;
 
   const breathe = pointerOnScreen ? 0.12 : 0.08;
-  if (hoverRect) {
-    cursorLight.renderRx = Math.min(1.45, Math.max(1.08, 1 + hoverRect.width / Math.max(hoverRadius * 4.2, 1)));
-    cursorLight.renderRy = 0.72 + Math.cos(t * 0.75) * 0.04;
-  } else {
-    cursorLight.renderRx = 0.86 + Math.sin(t * 0.9) * breathe;
-    cursorLight.renderRy = 0.86 + Math.cos(t * 0.75) * breathe;
-  }
+  cursorLight.renderRx = 0.86 + Math.sin(t * 0.9) * breathe;
+  cursorLight.renderRy = 0.86 + Math.cos(t * 0.75) * breathe;
 }
 
 function getCursorLightBlob() {
@@ -1322,8 +1321,54 @@ function getCursorLightBlob() {
   };
 }
 
+function updateHoverTextLight(time) {
+  const hoverRect = hoveredTextLightRect;
+  const hasHover = pointerOnScreen && hoverRect;
+  hoverTextLight.active = !!hasHover;
+
+  if (hasHover) {
+    const textCenterX = hoverRect.left + hoverRect.width * 0.5;
+    const textCenterY = hoverRect.top + hoverRect.height * 0.5;
+    hoverTextLight.targetX = (pointerClientX * 0.72 + textCenterX * 0.28) * dpr;
+    hoverTextLight.targetY = (pointerClientY * 0.76 + textCenterY * 0.24) * dpr;
+    hoverTextLight.targetRadius = Math.max(
+      cursorLight.baseRadius * 1.18,
+      hoverRect.width * (width < MOBILE_BREAKPOINT ? 0.78 : 0.66) + 128,
+      hoverRect.height * 5.2
+    );
+  }
+
+  const appear = hasHover ? 0.24 : 0.1;
+  hoverTextLight.opacity += ((hasHover ? 1 : 0) - hoverTextLight.opacity) * appear;
+  hoverTextLight.renderX += (hoverTextLight.targetX - hoverTextLight.renderX) * (hasHover ? 0.34 : 0.08);
+  hoverTextLight.renderY += (hoverTextLight.targetY - hoverTextLight.renderY) * (hasHover ? 0.34 : 0.08);
+  hoverTextLight.renderRadius += (hoverTextLight.targetRadius - hoverTextLight.renderRadius) * 0.18;
+
+  const t = time * 0.001;
+  hoverTextLight.renderRx = 1.1 + Math.sin(t * 0.72) * 0.06;
+  hoverTextLight.renderRy = 0.78 + Math.cos(t * 0.64) * 0.04;
+}
+
+function getHoverTextLightBlob() {
+  return {
+    hoverTextLight: true,
+    radius: hoverTextLight.renderRadius,
+    strength: hoverTextLight.strength * hoverTextLight.opacity,
+    renderX: hoverTextLight.renderX,
+    renderY: hoverTextLight.renderY,
+    renderRx: hoverTextLight.renderRx,
+    renderRy: hoverTextLight.renderRy,
+    renderRadius: hoverTextLight.renderRadius,
+    tiltVariation: hoverTextLight.tiltVariation,
+    ellipseX: hoverTextLight.ellipseX * hoverTextLight.renderRx,
+    ellipseY: hoverTextLight.ellipseY * hoverTextLight.renderRy,
+    ellipseRound: hoverTextLight.ellipseRound,
+  };
+}
+
 function forEachLightBlob(callback) {
   for (const b of cachedLightBlobs) callback(b, false);
+  if (hoverTextLight.opacity > 0.025) callback(getHoverTextLightBlob(), false);
   if (pointerOnScreen) callback(getCursorLightBlob(), true);
 }
 
@@ -2147,6 +2192,7 @@ function drawLightBokehLayer(time = lastRenderAt) {
   forEachLightBlob((b, isCursor) => {
     let scale = 1.38;
     if (isCursor) scale = 2.55;
+    else if (b.hoverTextLight) scale = 2.08;
     else if (b.heroLight) scale = 1.54;
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.48 + (b.mergeFactor ?? 0) * 0.18;
     drawLightBlob(lightBokehRawCtx, b, scale);
@@ -2181,6 +2227,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
   forEachLightBlob((b, isCursor) => {
     let scale = 1.42;
     if (isCursor) scale = 2.65;
+    else if (b.hoverTextLight) scale = 2.18;
     else if (b.heroLight) scale = 1.58;
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.5 + (b.mergeFactor ?? 0) * 0.16;
     drawLightBlob(lightRawCtx, b, scale);
@@ -2572,6 +2619,7 @@ function drawMobileBackdrop(time) {
     drawMobileSoftLight(wallCtx, light, 1.18 * sizeShift, 0.72);
     if (i === 0) drawMobileUpperHighlight(wallCtx, light);
   }
+  if (hoverTextLight.opacity > 0.025) drawMobileSoftLight(wallCtx, getHoverTextLightBlob(), 1.8, 0.84);
   if (pointerOnScreen) drawMobileSoftLight(wallCtx, getCursorLightBlob(), 1.65, 0.72);
   wallCtx.restore();
 }
@@ -2588,6 +2636,7 @@ function drawMobileLightMap() {
     drawMobileSoftLight(lightCtx, light, 1.02 * sizeShift, 0.6);
     if (i === 0) drawMobileUpperHighlight(lightCtx, light);
   }
+  if (hoverTextLight.opacity > 0.025) drawMobileSoftLight(lightCtx, getHoverTextLightBlob(), 1.72, 0.92);
   if (pointerOnScreen) drawMobileSoftLight(lightCtx, getCursorLightBlob(), 1.55, 0.75);
 
   lightCtx.globalCompositeOperation = 'source-over';
@@ -2598,6 +2647,7 @@ function renderMobileScene(time) {
   ctx.globalCompositeOperation = 'source-over';
   updateWind(time);
   updateHoveredTextFromPointer(pointerClientX, pointerClientY);
+  updateHoverTextLight(time);
   updateCursorLight(time);
   updateBlobs(time);
   drawMobileBackdrop(time);
@@ -2632,6 +2682,7 @@ function render(time) {
     lastDynamicTextMeasureAt = time;
   }
   updateHoveredTextFromPointer(pointerClientX, pointerClientY);
+  updateHoverTextLight(time);
 
   if (width < MOBILE_BREAKPOINT) {
     renderMobileScene(time);
