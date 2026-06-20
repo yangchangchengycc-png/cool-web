@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio — Detail</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="layout-detail">
+  <a class="detail-back" href="../index.html">← work</a>
+  <header class="minimal-header">
+    <nav class="minimal-nav" aria-label="Primary navigation">
+      <a href="work.html">work</a>
+      <a href="#exhibition">exhibition</a>
+      <a href="#contact">contact</a>
+    </nav>
+  </header>
+
+  <main class="detail-main">
+    <article class="detail-content">
+      <h1 class="detail-title" id="detail-title">precarious force</h1>
+      <p class="detail-meta" id="detail-meta">A project page placeholder. Replace this area with images, writing, credits, process, or documentation when the final content is ready.</p>
+    </article>
+  </main>
+
+  <script>
+    const pages = {
+      'precarious-force': {
+        title: 'precarious force',
+        meta: 'Project page placeholder for precarious force.'
+      },
+      'above-the-water': {
+        title: 'above the water',
+        meta: 'Project page placeholder for above the water.'
+      },
+      exhibition: {
+        title: 'exhibition',
+        meta: 'Exhibition information and documentation can be placed here.'
+      },
+      nector: {
+        title: 'nector',
+        meta: 'Project page placeholder for nector.'
+      },
+      branding: {
+        title: 'branding',
+        meta: 'Branding work, identity systems, and related case studies can be placed here.'
+      },
+      river: {
+        title: 'you can’t step into the same river twice',
+        meta: 'Project page placeholder for you can’t step into the same river twice.'
+      },
+      'trees-in-the-plastic-boxes': {
+        title: 'trees in the plastic boxes',
+        meta: 'Project page placeholder for trees in the plastic boxes.'
+      },
+      question: {
+        title: '<− ? −>',
+        meta: 'An open index page for experiments, notes, or uncategorized work.'
+      },
+      contact: {
+        title: 'contact',
+        meta: 'hello@example.com'
+      }
+    };
+
+    function renderDetail() {
+      const key = window.location.hash.replace('#', '') || 'precarious-force';
+      const page = pages[key] || pages['precarious-force'];
+      document.title = `Portfolio — ${page.title}`;
+      document.getElementById('detail-title').textContent = page.title;
+      document.getElementById('detail-meta').textContent = page.meta;
+    }
+
+    window.addEventListener('hashchange', renderDetail);
+    renderDetail();
+  </script>
+</body>
+</html>

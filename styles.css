@@ -8,9 +8,9 @@
 
 :root {
   --wall: #ebe9e4;
-  --text: #2a2a28;
-  --text-muted: rgba(42, 42, 40, 0.45);
-  --header-fg: rgba(42, 42, 40, 0.7);
+  --text: #000000;
+  --text-muted: rgba(0, 0, 0, 0.45);
+  --header-fg: rgba(0, 0, 0, 0.7);
 }
 
 html {
@@ -186,7 +186,7 @@ body {
   letter-spacing: 0.1em;
   color: var(--text);
   text-decoration: none;
-  border-bottom: 1px solid rgba(42, 42, 40, 0.25);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
   padding-bottom: 0.15em;
   transition: border-color 0.3s;
 }
@@ -310,5 +310,429 @@ body {
   .footer {
     right: 1.2rem;
     bottom: 1.2rem;
+  }
+}
+
+.layout-home,
+.layout-detail,
+.layout-work {
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 400;
+}
+
+.layout-home {
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: var(--wall);
+}
+
+.minimal-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  padding: 2.5vh 4.7vw 0 4.7vw;
+}
+
+.minimal-nav {
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.minimal-nav a,
+.scatter-item .project__link,
+.detail-back {
+  color: #000;
+  text-decoration: none;
+}
+
+.minimal-nav a {
+  font-size: clamp(0.72rem, 0.85vw, 0.9rem);
+  line-height: 1;
+}
+
+.scatter-board {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.scatter-projects {
+  position: absolute;
+  inset: 0;
+  display: block;
+  list-style: none;
+}
+
+.scatter-item {
+  position: absolute;
+  white-space: nowrap;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.scatter-item .project__link {
+  display: inline-block;
+  padding: 0;
+  transition: opacity 180ms ease;
+}
+
+.scatter-item .project__link:hover {
+  opacity: 0.42;
+}
+
+.scatter-item .project__title {
+  display: block;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.25rem, 2.28vw, 2rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  visibility: hidden;
+}
+
+.scatter-item--precarious {
+  top: 20.8%;
+  left: 9.4%;
+}
+
+.scatter-item--water {
+  top: 23%;
+  left: 47.8%;
+}
+
+.scatter-item--exhibition {
+  top: 27.4%;
+  right: 8.4%;
+}
+
+.scatter-item--nector {
+  top: 39.8%;
+  left: 66.7%;
+}
+
+.scatter-item--branding {
+  top: 46.5%;
+  left: 51.7%;
+}
+
+.scatter-item--river {
+  top: 56.4%;
+  left: 48%;
+}
+
+.scatter-item--trees {
+  left: 10.4%;
+  bottom: 14.5%;
+}
+
+.scatter-item--unknown {
+  top: 42.8%;
+  left: 25.2%;
+}
+
+.layout-detail {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.layout-work {
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: var(--wall);
+}
+
+.work-stage {
+  position: relative;
+  z-index: 6;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.72;
+}
+
+.work-roll {
+  position: relative;
+  width: min(44vw, 42rem);
+  min-width: 32rem;
+  height: 24rem;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  perspective: 700px;
+  transform-style: preserve-3d;
+}
+
+.roll-line {
+  position: absolute;
+  left: 50%;
+  width: min(30vw, 26rem);
+  --roll-side: clamp(1.9rem, 2.8vw, 2.8rem);
+  transform: translateX(-50%) translateY(0) scaleX(1);
+  transform-origin: center;
+  opacity: 1;
+  transition:
+    transform 760ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 160ms ease 760ms;
+}
+
+.roll-line--top {
+  top: 50%;
+  margin-top: -0.17rem;
+}
+
+.roll-line--bottom {
+  top: 50%;
+  bottom: auto;
+  margin-top: -0.17rem;
+  opacity: 0;
+}
+
+.work-roll.is-open .roll-line--top {
+  transform: translateX(-50%) translateY(-8.8rem) scaleX(1);
+  transition:
+    transform 850ms cubic-bezier(0.22, 0.61, 0.36, 1) 160ms,
+    opacity 160ms ease;
+}
+
+.work-roll.is-open .roll-line--bottom {
+  transform: translateX(-50%) translateY(8.8rem) scaleX(1);
+  opacity: 1;
+  transition:
+    transform 850ms cubic-bezier(0.22, 0.61, 0.36, 1) 160ms,
+    opacity 160ms ease 60ms;
+}
+
+.roll-line span {
+  display: block;
+  height: 1px;
+  margin: 0.16rem auto;
+  background: transparent;
+  transition:
+    opacity 180ms ease 720ms,
+    transform 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.roll-line--top span {
+  transform: translateY(-5px);
+}
+
+.roll-line--bottom span {
+  transform: translateY(8px);
+}
+
+.roll-line span:nth-child(1) {
+  width: 100%;
+  opacity: 0;
+}
+
+.roll-line span:nth-child(2) {
+  position: relative;
+  width: 100%;
+}
+
+.work-roll.is-open .roll-line span:nth-child(1) {
+  opacity: 1;
+  transition-delay: 380ms, 0ms;
+}
+
+.work-roll.is-open .roll-line span {
+  width: calc(100% - (var(--roll-side) * 2));
+}
+
+.roll-line span:nth-child(2)::before,
+.roll-line span:nth-child(2)::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  width: var(--roll-side);
+  height: 1px;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 180ms ease 720ms;
+}
+
+.roll-line span:nth-child(2)::before {
+  right: 100%;
+}
+
+.roll-line span:nth-child(2)::after {
+  left: 100%;
+}
+
+.roll-line--bottom span:nth-child(2)::before,
+.roll-line--bottom span:nth-child(2)::after {
+  top: -5px;
+}
+
+.work-roll.is-open .roll-line span:nth-child(2)::before,
+.work-roll.is-open .roll-line span:nth-child(2)::after {
+  opacity: 1;
+  transition-delay: 380ms;
+}
+
+.roll-viewport {
+  position: relative;
+  width: 100%;
+  height: 19.2rem;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  opacity: 1;
+  transform: none;
+  transform-origin: center;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 3%, #000 97%, transparent 100%);
+}
+
+.work-roll.is-open .roll-viewport {
+  transform: none;
+}
+
+.roll-item {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  min-width: 100%;
+  color: transparent;
+  font-size: clamp(1rem, 1.45vw, 1.42rem);
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  transform-origin: center center;
+  will-change: transform, opacity, letter-spacing;
+}
+
+.roll-item:hover {
+  opacity: 1 !important;
+}
+
+.detail-main {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 8rem 2rem;
+}
+
+.detail-content {
+  width: min(68rem, 82vw);
+}
+
+.detail-title {
+  font-size: clamp(2.5rem, 7vw, 7rem);
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.detail-meta {
+  margin-top: 1.6rem;
+  max-width: 32rem;
+  font-size: clamp(0.92rem, 1.2vw, 1.1rem);
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.detail-back {
+  position: fixed;
+  left: 4.7vw;
+  top: 2.5vh;
+  z-index: 20;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 700px) {
+  .minimal-header {
+    padding: 1.25rem 1.25rem 0;
+  }
+
+  .minimal-nav {
+    gap: 1.25rem;
+  }
+
+  .minimal-nav a {
+    font-size: 0.72rem;
+  }
+
+  .scatter-item {
+    white-space: nowrap;
+  }
+
+  .scatter-item .project__title {
+    font-size: clamp(1rem, 5.8vw, 1.7rem);
+  }
+
+  .scatter-item--precarious {
+    top: 15%;
+    left: 8%;
+  }
+
+  .scatter-item--water {
+    top: 26%;
+    left: 30%;
+  }
+
+  .scatter-item--exhibition {
+    top: 35%;
+    right: 8%;
+  }
+
+  .scatter-item--nector {
+    top: 44%;
+    left: 55%;
+  }
+
+  .scatter-item--branding {
+    top: 53%;
+    left: 18%;
+  }
+
+  .scatter-item--river {
+    top: 64%;
+    left: 8%;
+    white-space: normal;
+    width: 84vw;
+  }
+
+  .scatter-item--trees {
+    bottom: 12%;
+    left: 8%;
+  }
+
+  .scatter-item--unknown {
+    top: 43%;
+    left: 12%;
+  }
+
+  .work-roll {
+    width: 86vw;
+    min-width: 0;
+    height: 22rem;
+  }
+
+  .roll-line {
+    width: 70vw;
+  }
+
+  .roll-item {
+    font-size: clamp(0.92rem, 4vw, 1.18rem);
+  }
+
+  .roll-viewport {
+    height: 17.5rem;
   }
 }

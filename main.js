@@ -50,8 +50,8 @@ const SHADOW_HUES = [
   { r: 8, g: 10, b: -4 },
 ];
 const LIGHT = { r: 255, g: 251, b: 244 };
-const TEXT = '#b8b8b4';
-const TEXT_META = 'rgba(184, 184, 180, 0.62)';
+const TEXT = '#000000';
+const TEXT_META = 'rgba(0, 0, 0, 0.62)';
 
 let shadowRawCanvas, shadowRawCtx;
 let shadowCanvas, shadowCtx;
@@ -77,6 +77,7 @@ let lightBeams = [];
 let textItems = [];
 let grainPattern = null;
 let frostPattern = null;
+let scatterLayoutItems = [];
 
 const BLUR_SHADOW = prefersReducedMotion ? 38 : 58;
 const BLUR_LIGHT = prefersReducedMotion ? 28 : 50;
@@ -817,28 +818,149 @@ function drawFrostOverlay() {
   ctx.restore();
 }
 
+function shuffleArray(items) {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function buildScatterAnchors(count, isMobile) {
+  const desktopAnchors = [
+    { x: 0.1, y: 0.22 },
+    { x: 0.48, y: 0.24 },
+    { x: 0.79, y: 0.31 },
+    { x: 0.66, y: 0.41 },
+    { x: 0.52, y: 0.5 },
+    { x: 0.48, y: 0.62 },
+    { x: 0.12, y: 0.78 },
+    { x: 0.25, y: 0.45 },
+  ];
+  const mobileAnchors = [
+    { x: 0.08, y: 0.16 },
+    { x: 0.36, y: 0.26 },
+    { x: 0.62, y: 0.36 },
+    { x: 0.18, y: 0.45 },
+    { x: 0.52, y: 0.53 },
+    { x: 0.08, y: 0.64 },
+    { x: 0.1, y: 0.78 },
+    { x: 0.54, y: 0.72 },
+  ];
+  return shuffleArray((isMobile ? mobileAnchors : desktopAnchors).slice(0, count));
+}
+
+function layoutScatterItems() {
+  const items = [...document.querySelectorAll('.scatter-item')];
+  if (!items.length) return;
+
+  const isMobile = width < MOBILE_BREAKPOINT;
+  const anchors = buildScatterAnchors(items.length, isMobile);
+  scatterLayoutItems = items.map((el, index) => {
+    const anchor = anchors[index % anchors.length];
+    const jitterX = (Math.random() - 0.5) * (isMobile ? 0.1 : 0.12);
+    const jitterY = (Math.random() - 0.5) * (isMobile ? 0.08 : 0.1);
+    const x = Math.max(0.06, Math.min(0.86, anchor.x + jitterX));
+    const y = Math.max(0.12, Math.min(0.84, anchor.y + jitterY));
+    const phase = Math.random() * Math.PI * 2;
+
+    el.style.left = `${x * 100}%`;
+    el.style.top = `${y * 100}%`;
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+
+    return {
+      el,
+      x,
+      y,
+      phase,
+      ampX: (isMobile ? 3 : 5) + Math.random() * (isMobile ? 3 : 5),
+      ampY: (isMobile ? 2 : 3) + Math.random() * (isMobile ? 2 : 4),
+      speed: 0.00018 + Math.random() * 0.00018,
+    };
+  });
+}
+
+function updateScatterMotion(time) {
+  if (!scatterLayoutItems.length) return false;
+
+  for (const item of scatterLayoutItems) {
+    const x = Math.sin(time * item.speed + item.phase) * item.ampX;
+    const y = Math.cos(time * item.speed * 0.82 + item.phase) * item.ampY;
+    item.el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  }
+
+  return true;
+}
+
 function measureTextItems() {
   textItems = [];
   const projects = document.querySelectorAll('.project');
+  const rollItems = document.querySelectorAll('.roll-item');
   const canvasRect = canvas.getBoundingClientRect();
 
   projects.forEach((el) => {
     const title = el.querySelector('.project__title');
     const meta = el.querySelector('.project__meta');
-    if (!title || !meta) return;
+    if (!title) return;
 
     const titleRect = title.getBoundingClientRect();
-    const metaRect = meta.getBoundingClientRect();
+    const metaRect = meta?.getBoundingClientRect();
 
     textItems.push({
       title: title.textContent.trim(),
-      meta: meta.textContent.trim(),
+      meta: meta?.textContent.trim() ?? '',
       titleX: (titleRect.left - canvasRect.left) * dpr,
       titleY: (titleRect.top - canvasRect.top) * dpr,
-      metaX: (metaRect.left - canvasRect.left) * dpr,
-      metaY: (metaRect.top - canvasRect.top) * dpr,
+      metaX: metaRect ? (metaRect.left - canvasRect.left) * dpr : 0,
+      metaY: metaRect ? (metaRect.top - canvasRect.top) * dpr : 0,
       fontSize: parseFloat(getComputedStyle(title).fontSize) * dpr,
-      metaSize: parseFloat(getComputedStyle(meta).fontSize) * dpr,
+      metaSize: meta ? parseFloat(getComputedStyle(meta).fontSize) * dpr : 0,
+      fontFamily: getComputedStyle(title).fontFamily,
+      align: 'left',
+    });
+  });
+
+  rollItems.forEach((el) => {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    const viewport = el.closest('.roll-viewport');
+    const viewportOpacity = viewport ? parseFloat(getComputedStyle(viewport).opacity || '1') : 1;
+    const viewportOpen = viewport ? parseFloat(viewport.dataset.open || '0') : 0;
+    if (viewportOpen <= 0.01) return;
+    const transform = style.transform;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    if (transform && transform !== 'none') {
+      const matrix = transform.match(/matrix(3d)?\(([^)]+)\)/);
+      if (matrix) {
+        const values = matrix[2].split(',').map((value) => parseFloat(value.trim()));
+        if (matrix[1]) {
+          scaleX = values[0] || 1;
+          scaleY = values[5] || 1;
+        } else {
+          scaleX = values[0] || 1;
+          scaleY = values[3] || 1;
+        }
+      }
+    }
+
+    textItems.push({
+      title: el.textContent.trim(),
+      meta: '',
+      titleX: (rect.left + rect.width * 0.5 - canvasRect.left) * dpr,
+      titleY: (rect.top + rect.height * 0.5 - canvasRect.top) * dpr,
+      metaX: 0,
+      metaY: 0,
+      fontSize: parseFloat(style.fontSize) * dpr,
+      metaSize: 0,
+      fontFamily: style.fontFamily,
+      align: 'center',
+      scaleX,
+      scaleY,
+      opacity: parseFloat(style.opacity || '1') * viewportOpacity * viewportOpen,
     });
   });
 }
@@ -911,7 +1033,10 @@ function resize() {
   initGapPatches();
   initLightBeams();
   initDust();
-  requestAnimationFrame(measureTextItems);
+  requestAnimationFrame(() => {
+    layoutScatterItems();
+    measureTextItems();
+  });
 }
 
 function getShadowColor(b) {
@@ -1738,6 +1863,105 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
   destCtx.filter = 'none';
 }
 
+function getOpenRollRect() {
+  const roll = document.querySelector('.work-roll.is-open');
+  if (!roll) return null;
+  const viewport = roll.querySelector('.roll-viewport');
+  const rect = (viewport || roll).getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+
+  return {
+    x: rect.left * dpr,
+    y: rect.top * dpr,
+    width: rect.width * dpr,
+    height: rect.height * dpr,
+  };
+}
+
+function drawRollFocusLights(targetCtx, alphaScale = 1) {
+  const rect = getOpenRollRect();
+  if (!rect) return;
+
+  const t = lastRenderAt * 0.001;
+  const spots = [
+    { x: 0.34, y: 0.42, r: 0.9, a: 0.18, px: 0.7 },
+    { x: 0.62, y: 0.58, r: 0.72, a: 0.14, px: 1.3 },
+    { x: 0.48, y: 0.5, r: 1.18, a: 0.08, px: 2.1 },
+  ];
+
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = 'lighter';
+  for (const spot of spots) {
+    const cx = rect.x + rect.width * spot.x + Math.sin(t * 0.45 + spot.px) * rect.width * 0.035;
+    const cy = rect.y + rect.height * spot.y + Math.cos(t * 0.38 + spot.px) * rect.height * 0.045;
+    const radius = Math.max(rect.width, rect.height) * spot.r;
+    const grad = targetCtx.createRadialGradient(cx, cy, radius * 0.08, cx, cy, radius);
+    grad.addColorStop(0, `rgba(255,255,255,${spot.a * alphaScale})`);
+    grad.addColorStop(0.34, `rgba(255,252,246,${spot.a * 0.48 * alphaScale})`);
+    grad.addColorStop(0.68, `rgba(255,248,236,${spot.a * 0.16 * alphaScale})`);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    targetCtx.fillStyle = grad;
+    targetCtx.beginPath();
+    targetCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+    targetCtx.fill();
+  }
+  targetCtx.restore();
+}
+
+function rollShadowPulse(value) {
+  const t = Math.max(0, Math.min(value, 1));
+  return t * t * (3 - 2 * t);
+}
+
+function drawRollFocusShadows(targetCtx, mode = 'mask') {
+  const rect = getOpenRollRect();
+  if (!rect) return;
+
+  const t = lastRenderAt * 0.001;
+  const shadows = [
+    { x: 0.28, y: 0.38, rx: 0.28, ry: 0.18, phase: 0.2, speed: 0.22 },
+    { x: 0.68, y: 0.55, rx: 0.22, ry: 0.14, phase: 1.8, speed: 0.18 },
+    { x: 0.48, y: 0.72, rx: 0.34, ry: 0.12, phase: 3.1, speed: 0.16 },
+  ];
+
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = mode === 'mask' ? 'destination-out' : 'multiply';
+
+  for (const shadow of shadows) {
+    const cycle = Math.sin(t * shadow.speed + shadow.phase) * 0.5 + 0.5;
+    const alpha = rollShadowPulse(cycle) * (mode === 'mask' ? 0.24 : 0.075);
+    if (alpha < 0.012) continue;
+
+    const cx = rect.x + rect.width * shadow.x + Math.sin(t * 0.33 + shadow.phase) * rect.width * 0.045;
+    const cy = rect.y + rect.height * shadow.y + Math.cos(t * 0.27 + shadow.phase) * rect.height * 0.06;
+    const rx = rect.width * shadow.rx;
+    const ry = rect.height * shadow.ry;
+    const grad = targetCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
+
+    if (mode === 'mask') {
+      grad.addColorStop(0, `rgba(255,255,255,${alpha})`);
+      grad.addColorStop(0.46, `rgba(255,255,255,${alpha * 0.42})`);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+    } else {
+      grad.addColorStop(0, `rgba(152,150,142,${alpha})`);
+      grad.addColorStop(0.5, `rgba(172,170,162,${alpha * 0.38})`);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+    }
+
+    targetCtx.save();
+    targetCtx.translate(cx, cy);
+    targetCtx.rotate(-0.62 + Math.sin(t * 0.19 + shadow.phase) * 0.12);
+    targetCtx.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
+    targetCtx.fillStyle = grad;
+    targetCtx.beginPath();
+    targetCtx.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2);
+    targetCtx.fill();
+    targetCtx.restore();
+  }
+
+  targetCtx.restore();
+}
+
 function drawShadowLayer() {
   const isMobile = width < MOBILE_BREAKPOINT;
   const w = canvas.width;
@@ -1776,6 +2000,7 @@ function drawLightBokehLayer() {
     drawLightBlob(lightBokehRawCtx, b, scale);
   });
   drawClusterGlows(lightBokehRawCtx);
+  drawRollFocusLights(lightBokehRawCtx, 0.55);
   lightBokehRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightBokehRawCtx);
   const bokehBright = isMobile ? 1.04 : 1.1 + (1 - renderScale) * 0.28;
@@ -1798,6 +2023,8 @@ function drawLightMap() {
     drawLightBlob(lightRawCtx, b, scale);
   });
   drawClusterGlows(lightRawCtx);
+  drawRollFocusLights(lightRawCtx, 0.9);
+  drawRollFocusShadows(lightRawCtx, 'mask');
   lightRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightRawCtx);
 
@@ -1856,6 +2083,8 @@ function drawWall() {
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
+  drawRollFocusShadows(wallCtx, 'wall');
+
   wallCtx.globalCompositeOperation = 'lighter';
   wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
@@ -1869,19 +2098,100 @@ function drawMaskedText() {
   textCtx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const item of textItems) {
-    textCtx.font = `300 ${item.fontSize}px "Cormorant Garamond", serif`;
+    textCtx.font = `400 ${item.fontSize}px ${item.fontFamily || 'Arial, Helvetica, sans-serif'}`;
     textCtx.fillStyle = TEXT;
     textCtx.textBaseline = 'top';
-    textCtx.fillText(item.title, item.titleX, item.titleY);
 
+    if (item.align === 'center') {
+      textCtx.save();
+      textCtx.globalAlpha = Number.isFinite(item.opacity) ? item.opacity : 1;
+      textCtx.textAlign = 'center';
+      textCtx.translate(item.titleX, item.titleY - (item.fontSize * (item.scaleY ?? 1)) * 0.5);
+      textCtx.scale(item.scaleX ?? 1, item.scaleY ?? 1);
+      textCtx.fillText(item.title, 0, 0);
+      textCtx.restore();
+    } else {
+      textCtx.textAlign = 'left';
+      textCtx.fillText(item.title, item.titleX, item.titleY);
+    }
+
+    if (!item.meta) continue;
     textCtx.font = `300 ${item.metaSize}px "Noto Sans SC", sans-serif`;
     textCtx.fillStyle = TEXT_META;
     textCtx.fillText(item.meta, item.metaX, item.metaY);
   }
 
+  drawMaskedRollLines();
+
   textCtx.globalCompositeOperation = 'destination-in';
   textCtx.drawImage(lightCanvas, 0, 0);
+  textCtx.drawImage(lightCanvas, 0, 0);
+  textCtx.drawImage(lightCanvas, 0, 0);
   textCtx.globalCompositeOperation = 'source-over';
+}
+
+function getRemPx() {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+}
+
+function drawLineRect(rect, alpha = 1) {
+  if (alpha <= 0 || rect.width <= 0 || rect.height <= 0) return;
+  const canvasRect = canvas.getBoundingClientRect();
+  textCtx.globalAlpha = alpha;
+  textCtx.fillRect(
+    (rect.left - canvasRect.left) * dpr,
+    (rect.top - canvasRect.top) * dpr,
+    rect.width * dpr,
+    Math.max(rect.height * dpr, dpr)
+  );
+}
+
+function drawMaskedRollLines() {
+  const rolls = document.querySelectorAll('.work-roll');
+  if (!rolls.length) return;
+
+  textCtx.save();
+  textCtx.fillStyle = TEXT;
+
+  for (const roll of rolls) {
+    const isOpen = roll.classList.contains('is-open');
+    const lines = roll.querySelectorAll('.roll-line');
+
+    lines.forEach((line) => {
+      const lineOpacity = parseFloat(getComputedStyle(line).opacity || '1');
+      const spans = line.querySelectorAll('span');
+
+      spans.forEach((span, index) => {
+        const spanOpacity = parseFloat(getComputedStyle(span).opacity || '1');
+        drawLineRect(span.getBoundingClientRect(), lineOpacity * spanOpacity);
+
+        if (!isOpen || index !== 1) return;
+
+        const rect = span.getBoundingClientRect();
+        const rem = getRemPx();
+        const sideWidth = Math.min(2.8 * rem, Math.max(1.9 * rem, window.innerWidth * 0.028));
+        const sideGap = 0;
+        const yOffset = line.classList.contains('roll-line--bottom') ? -8 : 5;
+        const sideHeight = Math.max(rect.height, 1);
+
+        drawLineRect({
+          left: rect.left - sideGap - sideWidth,
+          top: rect.top + yOffset,
+          width: sideWidth,
+          height: sideHeight,
+        }, lineOpacity);
+        drawLineRect({
+          left: rect.right + sideGap,
+          top: rect.top + yOffset,
+          width: sideWidth,
+          height: sideHeight,
+        }, lineOpacity);
+      });
+    });
+  }
+
+  textCtx.globalAlpha = 1;
+  textCtx.restore();
 }
 
 function getMobileLightSources() {
@@ -2044,6 +2354,7 @@ function render(time) {
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
+  if (updateScatterMotion(time)) measureTextItems();
 
   if (width < MOBILE_BREAKPOINT) {
     renderMobileScene(time);
@@ -2054,6 +2365,7 @@ function render(time) {
   updateWind(time);
   updateCursorLight(time);
   updateBlobs(time);
+  if (document.querySelector('.roll-item')) measureTextItems();
   drawShadowLayer();
   drawLightBokehLayer();
   drawLightMap();
@@ -2092,6 +2404,7 @@ requestAnimationFrame(render);
 
 window.addEventListener('resize', () => {
   resize();
+  layoutScatterItems();
   measureTextItems();
 });
 

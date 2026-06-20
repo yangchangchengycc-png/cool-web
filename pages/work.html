@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio — Work</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="layout-work">
+  <canvas id="scene" aria-hidden="true"></canvas>
+
+  <header class="minimal-header">
+    <nav class="minimal-nav" aria-label="Primary navigation">
+      <a href="work.html">work</a>
+      <a href="view.html#exhibition">exhibition</a>
+      <a href="view.html#contact">contact</a>
+    </nav>
+  </header>
+
+  <main class="work-stage" aria-label="Work roll index">
+    <section class="work-roll" id="work-roll" aria-label="Scrollable work list">
+      <div class="roll-line roll-line--top" aria-hidden="true">
+        <span></span><span></span>
+      </div>
+      <div class="roll-viewport" id="roll-viewport"></div>
+      <div class="roll-line roll-line--bottom" aria-hidden="true">
+        <span></span><span></span>
+      </div>
+    </section>
+  </main>
+
+  <script src="../main.js" defer></script>
+  <script>
+    const rollProjects = [
+      { title: 'precarious force', href: 'view.html#precarious-force' },
+      { title: 'above the water', href: 'view.html#above-the-water' },
+      { title: 'exhibition', href: 'view.html#exhibition' },
+      { title: 'nector', href: 'view.html#nector' },
+      { title: 'branding', href: 'view.html#branding' },
+      { title: 'trees in the plastic boxes', href: 'view.html#trees-in-the-plastic-boxes' },
+      { title: 'you can’t step into the same river twice', href: 'view.html#river' },
+      { title: '<− ? −>', href: 'view.html#question' }
+    ];
+
+    const viewport = document.getElementById('roll-viewport');
+    const roll = document.getElementById('work-roll');
+    let rollOffset = 0;
+    let rollTarget = 0;
+    let rollHovered = false;
+    let wheelLocked = false;
+    let rollOpen = 0;
+    let rollOpenTarget = 0;
+
+    function renderRoll() {
+      const center = (rollProjects.length - 1) / 2;
+      viewport.innerHTML = rollProjects.map((project, index) => (
+        `<a class="roll-item" href="${project.href}" data-index="${index}">${project.title}</a>`
+      )).join('');
+      viewport.dataset.open = '0';
+
+      updateRoll(0);
+    }
+
+    function updateRoll(time) {
+      rollOffset += (rollTarget - rollOffset) * 0.22;
+      rollOpen += (rollOpenTarget - rollOpen) * 0.12;
+      viewport.dataset.open = rollOpen.toFixed(3);
+      const items = viewport.querySelectorAll('.roll-item');
+      const count = items.length;
+      const phase = time * 0.00028;
+      const openEase = rollOpen * rollOpen * (3 - 2 * rollOpen);
+
+      items.forEach((item, index) => {
+        let relative = index - rollOffset;
+        relative = ((relative + count / 2) % count + count) % count - count / 2;
+        const curve = Math.tanh(relative * 0.58);
+        const y = curve * 138;
+        const depth = Math.cos(curve * Math.PI * 0.5);
+        const textOpenRaw = Math.max(0, Math.min((openEase - 0.46) / 0.54, 1));
+        const textOpen = textOpenRaw * textOpenRaw * (3 - 2 * textOpenRaw);
+        const aperture = textOpen * 154;
+        const visible = Math.abs(y) < aperture;
+        const scaleY = 0.18 + depth * 0.92;
+        const scaleX = 0.86 + depth * 0.18;
+        const edgeStart = Math.max(0, aperture - 24);
+        const edgeFade = Math.max(0, 1 - Math.max(0, Math.abs(y) - edgeStart) / 24);
+        const opacity = visible ? Math.max(0, (0.16 + depth * 0.84) * edgeFade * textOpen) : 0;
+        const tracking = 0.01 + Math.abs(curve) * 0.1;
+        const drift = Math.sin(phase + index * 0.72) * (1.2 + depth * 1.4);
+        const z = Math.round(depth * 100);
+
+        item.style.transform = `translate3d(${drift}px, ${y}px, ${z}px) scale(${scaleX}, ${scaleY})`;
+        item.style.opacity = opacity.toFixed(3);
+        item.style.letterSpacing = `${tracking}em`;
+        item.style.zIndex = String(Math.round(depth * 1000));
+      });
+
+      requestAnimationFrame(updateRoll);
+    }
+
+    roll.addEventListener('mouseenter', () => {
+      rollHovered = true;
+      rollOpenTarget = 1;
+      roll.classList.add('is-open');
+    });
+
+    roll.addEventListener('mouseleave', () => {
+      rollHovered = false;
+      rollOpenTarget = 0;
+      roll.classList.remove('is-open');
+    });
+
+    roll.addEventListener('wheel', (event) => {
+      if (!rollHovered) return;
+      event.preventDefault();
+      if (wheelLocked) return;
+
+      const direction = event.deltaY > 0 ? 1 : -1;
+      rollTarget += direction;
+      wheelLocked = true;
+      window.setTimeout(() => {
+        wheelLocked = false;
+      }, 220);
+    }, { passive: false });
+
+    renderRoll();
+  </script>
+</body>
+</html>
