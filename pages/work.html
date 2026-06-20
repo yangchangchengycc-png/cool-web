@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css?v=20260620-1450">
+  <link rel="stylesheet" href="../styles.css?v=20260620-1454">
 </head>
 <body class="layout-work">
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -32,7 +32,7 @@
     </section>
   </main>
 
-  <script src="../main.js?v=20260620-1450" defer></script>
+  <script src="../main.js?v=20260620-1454" defer></script>
   <script>
     const rollProjects = [
       { title: 'precarious force', href: 'view.html#precarious-force' },
@@ -56,12 +56,15 @@
     let wheelRemainder = 0;
     let lastWheelAt = 0;
     let lastWheelStepAt = 0;
+    let touchpadGestureTimer = 0;
+    let touchpadGestureActive = false;
     const WHEEL_STEP_SIZE = 520;
     const WHEEL_EVENT_CAP = 120;
     const WHEEL_STEP_PAUSE = 190;
-    const TOUCHPAD_STEP_SIZE = 165;
-    const TOUCHPAD_EVENT_CAP = 34;
-    const TOUCHPAD_STEP_PAUSE = 118;
+    const TOUCHPAD_STEP_SIZE = 120;
+    const TOUCHPAD_EVENT_CAP = 90;
+    const TOUCHPAD_STEP_PAUSE = 54;
+    const TOUCHPAD_GESTURE_IDLE = 150;
     const WHEEL_IDLE_RESET = 280;
 
     function renderRoll() {
@@ -76,7 +79,9 @@
     }
 
     function updateRoll(time) {
-      rollOffset += (rollTarget - rollOffset) * 0.18;
+      const targetDelta = rollTarget - rollOffset;
+      const follow = Math.min(0.34, 0.15 + Math.abs(targetDelta) * 0.055);
+      rollOffset += targetDelta * follow;
       rollOpen += (rollOpenTarget - rollOpen) * 0.12;
       viewport.dataset.open = rollOpen.toFixed(3);
       const count = rollItems.length;
@@ -131,20 +136,45 @@
       const modeScale = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? window.innerHeight : 1;
       const normalizedDelta = event.deltaY * modeScale;
       const isTouchpad = event.deltaMode === 0;
-      const stepSize = isTouchpad ? TOUCHPAD_STEP_SIZE : WHEEL_STEP_SIZE;
-      const eventCap = isTouchpad ? TOUCHPAD_EVENT_CAP : WHEEL_EVENT_CAP;
-      const stepPause = isTouchpad ? TOUCHPAD_STEP_PAUSE : WHEEL_STEP_PAUSE;
-      const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), eventCap);
 
       if (now - lastWheelAt > WHEEL_IDLE_RESET) wheelRemainder = 0;
       lastWheelAt = now;
+
+      if (isTouchpad) {
+        const direction = normalizedDelta > 0 ? 1 : -1;
+        const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), TOUCHPAD_EVENT_CAP);
+
+        if (!touchpadGestureActive) {
+          rollTarget += direction;
+          touchpadGestureActive = true;
+          lastWheelStepAt = now;
+          wheelRemainder = 0;
+        } else {
+          wheelRemainder += cappedDelta;
+          if (Math.abs(wheelRemainder) >= TOUCHPAD_STEP_SIZE && now - lastWheelStepAt >= TOUCHPAD_STEP_PAUSE) {
+            const extraSteps = Math.min(4, Math.max(1, Math.floor(Math.abs(wheelRemainder) / TOUCHPAD_STEP_SIZE)));
+            rollTarget += direction * extraSteps;
+            wheelRemainder -= direction * TOUCHPAD_STEP_SIZE * extraSteps;
+            lastWheelStepAt = now;
+          }
+        }
+
+        window.clearTimeout(touchpadGestureTimer);
+        touchpadGestureTimer = window.setTimeout(() => {
+          touchpadGestureActive = false;
+          wheelRemainder = 0;
+        }, TOUCHPAD_GESTURE_IDLE);
+        return;
+      }
+
+      const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), WHEEL_EVENT_CAP);
       wheelRemainder += cappedDelta;
 
-      if (Math.abs(wheelRemainder) < stepSize || now - lastWheelStepAt < stepPause) return;
+      if (Math.abs(wheelRemainder) < WHEEL_STEP_SIZE || now - lastWheelStepAt < WHEEL_STEP_PAUSE) return;
 
       const direction = wheelRemainder > 0 ? 1 : -1;
       rollTarget += direction;
-      wheelRemainder -= direction * stepSize;
+      wheelRemainder -= direction * WHEEL_STEP_SIZE;
       lastWheelStepAt = now;
     }, { passive: false });
 
