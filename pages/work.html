@@ -53,12 +53,14 @@
     let wheelLocked = false;
     let rollOpen = 0;
     let rollOpenTarget = 0;
+    let rollItems = [];
 
     function renderRoll() {
       const center = (rollProjects.length - 1) / 2;
       viewport.innerHTML = rollProjects.map((project, index) => (
         `<a class="roll-item" href="${project.href}" data-index="${index}">${project.title}</a>`
       )).join('');
+      rollItems = [...viewport.querySelectorAll('.roll-item')];
       viewport.dataset.open = '0';
 
       updateRoll(0);
@@ -68,12 +70,11 @@
       rollOffset += (rollTarget - rollOffset) * 0.22;
       rollOpen += (rollOpenTarget - rollOpen) * 0.12;
       viewport.dataset.open = rollOpen.toFixed(3);
-      const items = viewport.querySelectorAll('.roll-item');
-      const count = items.length;
+      const count = rollItems.length;
       const phase = time * 0.00028;
       const openEase = rollOpen * rollOpen * (3 - 2 * rollOpen);
 
-      items.forEach((item, index) => {
+      rollItems.forEach((item, index) => {
         let relative = index - rollOffset;
         relative = ((relative + count / 2) % count + count) % count - count / 2;
         const curve = Math.tanh(relative * 0.58);

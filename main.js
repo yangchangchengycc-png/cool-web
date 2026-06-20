@@ -2351,7 +2351,7 @@ function drawMaskedRollLines() {
         const spanOpacity = parseFloat(getComputedStyle(span).opacity || '1');
         drawLineRect(span.getBoundingClientRect(), lineOpacity * spanOpacity, canvasRect);
 
-        if (!isOpen || index !== 1) continue;
+        if (!isOpen || index !== 1) return;
 
         const rect = span.getBoundingClientRect();
         const rem = getRemPx();
