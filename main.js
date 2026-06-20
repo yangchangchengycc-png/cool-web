@@ -18,8 +18,15 @@ let lightBrightBoost = 1;
 let renderFrame = 0;
 let lastRenderAt = 0;
 let lastDynamicTextMeasureAt = 0;
+let lastClusterUpdateAt = 0;
+let lastShadowLayerAt = 0;
+let hasRollItems = false;
+let cachedOpenRollRect = null;
+let cachedOpenRollFrame = -1;
 
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
+const DESKTOP_CLUSTER_FRAME_MS = 1000 / 30;
+const DESKTOP_SHADOW_FRAME_MS = 1000 / 30;
 
 const mouse = { targetX: 0.5, targetY: 0.5 };
 const smoothMouse = { x: 0.5, y: 0.5 };
@@ -971,6 +978,9 @@ function measureTextItems() {
 function resize() {
   width = window.innerWidth;
   height = window.innerHeight;
+  hasRollItems = !!document.querySelector('.roll-item');
+  cachedOpenRollRect = null;
+  cachedOpenRollFrame = -1;
   updatePerfProfile();
 
   canvas.width = width * dpr;
@@ -1445,7 +1455,10 @@ function updateBlobs(time) {
     }
   }
 
-  updateLightClustering(time);
+  if (width < MOBILE_BREAKPOINT || time - lastClusterUpdateAt > DESKTOP_CLUSTER_FRAME_MS) {
+    updateLightClustering(time);
+    lastClusterUpdateAt = time;
+  }
 
   for (const b of blobs) {
     if (b.type !== 'light') continue;
@@ -1867,18 +1880,30 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
 }
 
 function getOpenRollRect() {
+  if (cachedOpenRollFrame === renderFrame) return cachedOpenRollRect;
+
   const roll = document.querySelector('.work-roll.is-open');
-  if (!roll) return null;
+  if (!roll) {
+    cachedOpenRollFrame = renderFrame;
+    cachedOpenRollRect = null;
+    return null;
+  }
   const viewport = roll.querySelector('.roll-viewport');
   const rect = (viewport || roll).getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
+  if (rect.width <= 0 || rect.height <= 0) {
+    cachedOpenRollFrame = renderFrame;
+    cachedOpenRollRect = null;
+    return null;
+  }
 
-  return {
+  cachedOpenRollFrame = renderFrame;
+  cachedOpenRollRect = {
     x: rect.left * dpr,
     y: rect.top * dpr,
     width: rect.width * dpr,
     height: rect.height * dpr,
   };
+  return cachedOpenRollRect;
 }
 
 function drawRollFocusLights(targetCtx, alphaScale = 1) {
@@ -1967,6 +1992,9 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
 
 function drawShadowLayer() {
   const isMobile = width < MOBILE_BREAKPOINT;
+  if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < DESKTOP_SHADOW_FRAME_MS) return;
+  lastShadowLayerAt = lastRenderAt;
+
   const w = canvas.width;
   const h = canvas.height;
   beginBufferDraw(shadowRawCtx);
@@ -2353,11 +2381,12 @@ function render(time) {
 
   lastRenderAt = time;
   renderFrame += 1;
+  cachedOpenRollFrame = -1;
   const recentlyMoved = time - lastPointerMove < 120;
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
-  const dynamicTextChanged = updateScatterMotion(time) || !!document.querySelector('.roll-item');
+  const dynamicTextChanged = updateScatterMotion(time) || hasRollItems;
   if (dynamicTextChanged && time - lastDynamicTextMeasureAt > 66) {
     measureTextItems();
     lastDynamicTextMeasureAt = time;
