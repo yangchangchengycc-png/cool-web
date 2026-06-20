@@ -36,11 +36,11 @@ let cachedWorkRollEls = [];
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
 const DESKTOP_CLUSTER_FRAME_MS = 1000 / 30;
 const DESKTOP_SHADOW_FRAME_MS = 1000 / 30;
-const DESKTOP_BOKEH_FRAME_MS = 1000 / 30;
-const DESKTOP_LIGHT_FRAME_MS = 1000 / 30;
-const DESKTOP_IDLE_LIGHT_FRAME_MS = 1000 / 20;
+const DESKTOP_BOKEH_FRAME_MS = 1000 / 24;
+const DESKTOP_LIGHT_FRAME_MS = 1000 / 26;
+const DESKTOP_IDLE_LIGHT_FRAME_MS = 1000 / 18;
 const DESKTOP_FX_FRAME_MS = 1000 / 24;
-const DESKTOP_TEXT_MEASURE_MS = 80;
+const DESKTOP_TEXT_MEASURE_MS = 110;
 
 const mouse = { targetX: 0.5, targetY: 0.5 };
 const smoothMouse = { x: 0.5, y: 0.5 };

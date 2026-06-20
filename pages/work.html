@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css?v=20260620-1448">
+  <link rel="stylesheet" href="../styles.css?v=20260620-1450">
 </head>
 <body class="layout-work">
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -32,7 +32,7 @@
     </section>
   </main>
 
-  <script src="../main.js?v=20260620-1448" defer></script>
+  <script src="../main.js?v=20260620-1450" defer></script>
   <script>
     const rollProjects = [
       { title: 'precarious force', href: 'view.html#precarious-force' },
@@ -59,6 +59,9 @@
     const WHEEL_STEP_SIZE = 520;
     const WHEEL_EVENT_CAP = 120;
     const WHEEL_STEP_PAUSE = 190;
+    const TOUCHPAD_STEP_SIZE = 165;
+    const TOUCHPAD_EVENT_CAP = 34;
+    const TOUCHPAD_STEP_PAUSE = 118;
     const WHEEL_IDLE_RESET = 280;
 
     function renderRoll() {
@@ -127,17 +130,21 @@
       const now = performance.now();
       const modeScale = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? window.innerHeight : 1;
       const normalizedDelta = event.deltaY * modeScale;
-      const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), WHEEL_EVENT_CAP);
+      const isTouchpad = event.deltaMode === 0;
+      const stepSize = isTouchpad ? TOUCHPAD_STEP_SIZE : WHEEL_STEP_SIZE;
+      const eventCap = isTouchpad ? TOUCHPAD_EVENT_CAP : WHEEL_EVENT_CAP;
+      const stepPause = isTouchpad ? TOUCHPAD_STEP_PAUSE : WHEEL_STEP_PAUSE;
+      const cappedDelta = Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), eventCap);
 
       if (now - lastWheelAt > WHEEL_IDLE_RESET) wheelRemainder = 0;
       lastWheelAt = now;
       wheelRemainder += cappedDelta;
 
-      if (Math.abs(wheelRemainder) < WHEEL_STEP_SIZE || now - lastWheelStepAt < WHEEL_STEP_PAUSE) return;
+      if (Math.abs(wheelRemainder) < stepSize || now - lastWheelStepAt < stepPause) return;
 
       const direction = wheelRemainder > 0 ? 1 : -1;
       rollTarget += direction;
-      wheelRemainder -= direction * WHEEL_STEP_SIZE;
+      wheelRemainder -= direction * stepSize;
       lastWheelStepAt = now;
     }, { passive: false });
 
