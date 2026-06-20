@@ -6,7 +6,10 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const scriptBase = new URL('.', document.currentScript?.src || window.location.href);
+const mainScriptEl = document.currentScript || document.querySelector('script[src*="main.js"]');
+const scriptBase = mainScriptEl?.src
+  ? new URL('.', mainScriptEl.src)
+  : new URL(window.location.pathname.replace(/\/pages\/.*$/, '/').replace(/[^/]*$/, ''), window.location.origin);
 const paperTexture = new Image();
 let paperTextureReady = false;
 paperTexture.onload = () => {
