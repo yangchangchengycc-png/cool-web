@@ -137,15 +137,15 @@
     const isVideo = currentMode === 'video';
 
     if (els.prev) {
-      els.prev.hidden = !isPhoto;
+      els.prev.classList.toggle('is-inert', !isPhoto);
       els.prev.disabled = !isPhoto || photos.length <= 1;
     }
     if (els.next) {
-      els.next.hidden = !isPhoto;
+      els.next.classList.toggle('is-inert', !isPhoto);
       els.next.disabled = !isPhoto || photos.length <= 1;
     }
     if (els.expand) {
-      els.expand.hidden = !isPhoto || photos.length === 0;
+      els.expand.classList.toggle('is-inert', !isPhoto || photos.length === 0);
     }
     if (els.play) {
       els.play.hidden = !isVideo || videos.length === 0;

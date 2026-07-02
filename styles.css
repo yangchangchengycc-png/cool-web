@@ -533,6 +533,12 @@ body.layout-detail::before {
   cursor: pointer;
 }
 
+.project-nav.is-inert,
+.project-expand.is-inert {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .project-nav:disabled {
   opacity: 0.25;
   cursor: default;
@@ -644,7 +650,6 @@ body.layout-detail::before {
 }
 
 .project-nav[hidden],
-.project-expand[hidden],
 .project-play[hidden] {
   display: none;
 }
@@ -681,6 +686,8 @@ body.layout-detail::before {
   min-width: 5.5rem;
   padding: 0.55rem 1rem;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(0, 0, 0, 0.48);
 }
 
 .project-tab:last-child {
@@ -688,8 +695,14 @@ body.layout-detail::before {
 }
 
 .project-tab.is-active {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.88);
+  color: rgba(255, 255, 255, 0.96);
   font-weight: 600;
+}
+
+.project-tab:not(.is-active):hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.62);
 }
 
 .project-tab:disabled {
@@ -700,9 +713,9 @@ body.layout-detail::before {
 .project-info-col {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1.35rem;
-  min-height: 100%;
+  align-self: start;
   padding-top: clamp(1rem, 4vh, 3rem);
 }
 
