@@ -345,6 +345,26 @@ body::before {
   overflow: hidden;
 }
 
+.site-logo {
+  display: block;
+  line-height: 0;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.site-logo:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 0.35rem;
+}
+
+.site-logo__canvas {
+  display: block;
+  width: clamp(3.325rem, 7.7vw, 4.725rem);
+  height: auto;
+  aspect-ratio: 266 / 322;
+  background: transparent;
+}
+
 .minimal-header {
   position: fixed;
   top: 0;
@@ -352,7 +372,7 @@ body::before {
   right: 0;
   z-index: 20;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: flex-start;
   padding: 2.5vh 4.7vw 0 4.7vw;
   pointer-events: none;
@@ -396,7 +416,7 @@ body::before {
 .scatter-item {
   position: absolute;
   white-space: nowrap;
-  pointer-events: auto;
+  pointer-events: none;
   will-change: transform;
 }
 
@@ -631,6 +651,7 @@ body::before {
   white-space: nowrap;
   transform-origin: center center;
   will-change: transform, opacity, letter-spacing;
+  pointer-events: none;
 }
 
 .detail-main {

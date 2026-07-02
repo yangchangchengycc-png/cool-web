@@ -40,6 +40,10 @@ let hasRollItems = false;
 let sceneIdle = true;
 let pageVisible = true;
 let lastTextCanvasDrawAt = -1;
+let lastTextVisLightBuildAt = -1;
+let lastTextVisBuildAt = -1;
+let cachedHoverMaskTarget = null;
+let lastHoverMaskBuildAt = -1;
 let wallBaseCanvas = null;
 let wallBaseCtx = null;
 let cachedOpenRollRect = null;
@@ -113,6 +117,13 @@ let lightBokehRawCanvas, lightBokehRawCtx;
 let lightBokehCanvas, lightBokehCtx;
 let lightRawCanvas, lightRawCtx;
 let lightCanvas, lightCtx;
+let textMaskRawCanvas, textMaskRawCtx;
+let textMaskCanvas, textMaskCtx;
+let textMaskCoreCanvas, textMaskCoreCtx;
+let textVisCanvas, textVisCtx;
+let textVisLightCanvas, textVisLightCtx;
+let textVisHoverCanvas, textVisHoverCtx;
+let hoverTextCanvas, hoverTextCtx;
 let wallCanvas, wallCtx;
 let textCanvas, textCtx;
 let fxRawCanvas, fxRawCtx;
@@ -134,6 +145,7 @@ let frostPattern = null;
 let scatterLayoutItems = [];
 let hoveredTextEl = null;
 let hoveredTextLightRect = null;
+let lastPaintedHoveredTextEl = null;
 const textHoverScale = new WeakMap();
 let pointerClientX = 0;
 let pointerClientY = 0;
@@ -141,6 +153,8 @@ let pointerClientY = 0;
 const BLUR_SHADOW = prefersReducedMotion ? 38 : 58;
 const BLUR_LIGHT = prefersReducedMotion ? 28 : 50;
 const BLUR_MASK = prefersReducedMotion ? 28 : 42;
+const BLUR_TEXT_MASK_CORE = prefersReducedMotion ? 3 : 5;
+const BLUR_TEXT_MASK_EDGE = prefersReducedMotion ? 18 : 24;
 const BLUR_RAYS = prefersReducedMotion ? 22 : 34;
 
 const SUN_ANGLE = Math.PI * 0.75;
@@ -893,25 +907,25 @@ function drawTyndallEffect(time) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
-function drawFrostOverlay() {
+function drawFrostOverlay(targetCtx = ctx) {
   const w = canvas.width;
   const h = canvas.height;
   if (!frostPattern && !grainPattern) return;
 
-  ctx.save();
+  targetCtx.save();
   if (frostPattern) {
-    ctx.globalCompositeOperation = 'soft-light';
-    ctx.globalAlpha = 0.42;
-    ctx.fillStyle = frostPattern;
-    ctx.fillRect(0, 0, w, h);
+    targetCtx.globalCompositeOperation = 'soft-light';
+    targetCtx.globalAlpha = 0.42;
+    targetCtx.fillStyle = frostPattern;
+    targetCtx.fillRect(0, 0, w, h);
   }
   if (grainPattern) {
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = grainPattern;
-    ctx.fillRect(0, 0, w, h);
+    targetCtx.globalCompositeOperation = 'overlay';
+    targetCtx.globalAlpha = 0.22;
+    targetCtx.fillStyle = grainPattern;
+    targetCtx.fillRect(0, 0, w, h);
   }
-  ctx.restore();
+  targetCtx.restore();
 }
 
 function drawAmbientLightFill(targetCtx) {
@@ -1081,6 +1095,7 @@ function updateScatterMotion(time) {
 function measureTextItems() {
   refreshDomCaches();
   textItems = [];
+
   const canvasRect = getCanvasRect();
 
   cachedScatterItems.forEach((el) => {
@@ -1167,6 +1182,10 @@ function resize() {
 
   wallBaseCanvas = null;
   lastTextCanvasDrawAt = -1;
+  lastTextVisLightBuildAt = -1;
+  lastTextVisBuildAt = -1;
+  cachedHoverMaskTarget = null;
+  lastHoverMaskBuildAt = -1;
 
   canvas.width = width * dpr;
   canvas.height = height * dpr;
@@ -1203,6 +1222,35 @@ function resize() {
   lightCanvas = off2.canvas;
   lightCtx = off2.ctx;
 
+  const offTextMaskRaw = buf();
+  textMaskRawCanvas = offTextMaskRaw.canvas;
+  textMaskRawCtx = offTextMaskRaw.ctx;
+
+  const offTextMask = buf();
+  textMaskCanvas = offTextMask.canvas;
+  textMaskCtx = offTextMask.ctx;
+
+  const offTextMaskCore = buf();
+  textMaskCoreCanvas = offTextMaskCore.canvas;
+  textMaskCoreCtx = offTextMaskCore.ctx;
+
+  const offTextVis = full();
+  textVisCanvas = offTextVis.canvas;
+  textVisCtx = offTextVis.ctx;
+
+  const offTextVisLight = full();
+  textVisLightCanvas = offTextVisLight.canvas;
+  textVisLightCtx = offTextVisLight.ctx;
+
+  const offTextVisHover = full();
+  textVisHoverCanvas = offTextVisHover.canvas;
+  textVisHoverCtx = offTextVisHover.ctx;
+
+  const offHoverText = full();
+  hoverTextCanvas = offHoverText.canvas;
+  hoverTextCtx = offHoverText.ctx;
+  hoverTextCtx.imageSmoothingEnabled = false;
+
   const off3 = full();
   wallCanvas = off3.canvas;
   wallCtx = off3.ctx;
@@ -1210,8 +1258,7 @@ function resize() {
   const off4 = full();
   textCanvas = off4.canvas;
   textCtx = off4.ctx;
-  textCtx.imageSmoothingEnabled = true;
-  textCtx.imageSmoothingQuality = 'high';
+  textCtx.imageSmoothingEnabled = false;
 
   const offFxRaw = buf();
   fxRawCanvas = offFxRaw.canvas;
@@ -1662,7 +1709,8 @@ function drawClusterGlows(targetCtx) {
 }
 
 function updateBlobs(time) {
-  if (sceneIdle && perfTier >= 2 && renderFrame % 2 !== 0) return;
+  const idleSkip = perfTier >= 2 ? (sceneIdle ? 5 : 2) : (sceneIdle ? 4 : 1);
+  if (sceneIdle && renderFrame % idleSkip !== 0) return;
 
   const t = time * 0.001;
   const idle = !pointerOnScreen;
@@ -2248,6 +2296,9 @@ function drawShadowLayer() {
   applyOrganicShadowEdgeBlend(shadowRawCtx);
   endBufferDraw(shadowRawCtx);
   blurPass(shadowRawCanvas, shadowCtx, shadowCanvas, isMobile ? BLUR_SHADOW * 1.15 : BLUR_SHADOW * (perfTier >= 2 ? 0.92 : 1));
+  if (needsScatterTextMask() && lastTextVisLightBuildAt >= 0) {
+    applyScatterTextVisibilityShadow();
+  }
 }
 
 function drawLightBokehLayer(time = lastRenderAt) {
@@ -2295,6 +2346,168 @@ function shouldSyncBokehFromLightMap(time) {
   return time - lastBokehUpdateAt >= DESKTOP_BOKEH_IDLE_FRAME_MS;
 }
 
+function needsScatterTextMask() {
+  return cachedScatterItems.length > 0 && !hasRollItems;
+}
+
+function drawLightBlobPass(targetCtx) {
+  forEachLightBlob((b, isCursor) => {
+    let scale = 1.42;
+    if (isCursor) scale = 2.65;
+    else if (b.hoverTextLight) scale = 2.18;
+    else if (b.heroLight) scale = 1.58;
+    else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.5 + (b.mergeFactor ?? 0) * 0.16;
+    drawLightBlob(targetCtx, b, scale);
+  });
+  drawClusterGlows(targetCtx);
+}
+
+function updateScatterTextMaskRaw() {
+  if (!needsScatterTextMask() || !textMaskRawCtx) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  beginBufferDraw(textMaskRawCtx);
+  textMaskRawCtx.clearRect(0, 0, w, h);
+  textMaskRawCtx.globalCompositeOperation = 'lighter';
+  drawLightBlobPass(textMaskRawCtx);
+  textMaskRawCtx.globalCompositeOperation = 'source-over';
+  endBufferDraw(textMaskRawCtx);
+}
+
+function composeScatterTextVisibilityLight(isMobile = width < MOBILE_BREAKPOINT) {
+  if (!needsScatterTextMask() || !textVisLightCtx) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  blurPass(
+    textMaskRawCanvas,
+    textMaskCtx,
+    textMaskCanvas,
+    isMobile ? BLUR_TEXT_MASK_EDGE * 1.05 : BLUR_TEXT_MASK_EDGE,
+    isMobile
+      ? 'brightness(0.58) contrast(11) saturate(0)'
+      : 'brightness(0.6) contrast(13) saturate(0)'
+  );
+
+  blurPass(
+    textMaskRawCanvas,
+    textMaskCoreCtx,
+    textMaskCoreCanvas,
+    isMobile ? BLUR_TEXT_MASK_CORE * 1.1 : BLUR_TEXT_MASK_CORE,
+    isMobile
+      ? 'brightness(0.46) contrast(38) saturate(0)'
+      : 'brightness(0.42) contrast(48) saturate(0)'
+  );
+
+  textVisLightCtx.clearRect(0, 0, w, h);
+  textVisLightCtx.drawImage(textMaskCanvas, 0, 0, w, h);
+  textVisLightCtx.globalCompositeOperation = 'lighten';
+  textVisLightCtx.drawImage(textMaskCoreCanvas, 0, 0, w, h);
+  textVisLightCtx.globalCompositeOperation = 'source-over';
+  lastTextVisLightBuildAt = lastRenderAt;
+}
+
+function applyScatterTextVisibilityShadow() {
+  if (!needsScatterTextMask() || !textVisCtx || !textVisLightCtx || lastTextVisLightBuildAt < 0) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  textVisCtx.clearRect(0, 0, w, h);
+  textVisCtx.drawImage(textVisLightCanvas, 0, 0, w, h);
+
+  if (width >= MOBILE_BREAKPOINT) {
+    textVisCtx.globalCompositeOperation = 'destination-in';
+    textVisCtx.filter = 'grayscale(1) brightness(1.42) contrast(8.5) saturate(0)';
+    textVisCtx.drawImage(shadowCanvas, 0, 0, w, h);
+    textVisCtx.filter = 'none';
+    textVisCtx.globalCompositeOperation = 'source-over';
+  }
+
+  lastTextVisBuildAt = lastRenderAt;
+  cachedHoverMaskTarget = null;
+}
+
+function composeScatterTextVisibilityMask(isMobile = width < MOBILE_BREAKPOINT) {
+  composeScatterTextVisibilityLight(isMobile);
+  applyScatterTextVisibilityShadow();
+}
+
+function drawScatterTextLightMask(isMobile = width < MOBILE_BREAKPOINT) {
+  updateScatterTextMaskRaw();
+  composeScatterTextVisibilityMask(isMobile);
+}
+
+function applyTextVisibilityMask(targetCtx) {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = 'destination-in';
+
+  if (needsScatterTextMask() && textVisCanvas) {
+    targetCtx.drawImage(textVisCanvas, 0, 0, w, h);
+  } else {
+    targetCtx.filter = 'brightness(0.6) contrast(22) saturate(0)';
+    targetCtx.drawImage(lightCanvas, 0, 0, w, h);
+    targetCtx.filter = 'none';
+  }
+
+  targetCtx.restore();
+}
+
+function buildSolidHoverMask() {
+  if (!needsScatterTextMask() || !textMaskCoreCanvas || !textVisHoverCtx) return false;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  textVisHoverCtx.clearRect(0, 0, w, h);
+  textVisHoverCtx.filter = width < MOBILE_BREAKPOINT
+    ? 'grayscale(1) brightness(0.38) contrast(72) saturate(0)'
+    : 'grayscale(1) brightness(0.34) contrast(92) saturate(0)';
+  textVisHoverCtx.drawImage(textMaskCoreCanvas, 0, 0, w, h);
+  textVisHoverCtx.filter = 'none';
+
+  if (width >= MOBILE_BREAKPOINT) {
+    textVisHoverCtx.globalCompositeOperation = 'destination-in';
+    textVisHoverCtx.filter = 'grayscale(1) brightness(1.42) contrast(8.5) saturate(0)';
+    textVisHoverCtx.drawImage(shadowCanvas, 0, 0, w, h);
+    textVisHoverCtx.filter = 'none';
+    textVisHoverCtx.globalCompositeOperation = 'source-over';
+  }
+
+  return true;
+}
+
+function ensureSolidHoverMask() {
+  if (!hoveredTextEl) return false;
+  if (
+    cachedHoverMaskTarget === hoveredTextEl
+    && lastHoverMaskBuildAt >= lastTextVisBuildAt
+    && lastHoverMaskBuildAt >= lastTextVisLightBuildAt
+    && (width < MOBILE_BREAKPOINT || lastHoverMaskBuildAt >= lastShadowLayerAt)
+  ) {
+    return true;
+  }
+  if (!buildSolidHoverMask()) return false;
+  cachedHoverMaskTarget = hoveredTextEl;
+  lastHoverMaskBuildAt = lastRenderAt;
+  return true;
+}
+
+function applyHoveredTextVisibilityMask(targetCtx) {
+  if (!needsScatterTextMask() || !textVisHoverCanvas) return;
+  if (!ensureSolidHoverMask()) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = 'destination-in';
+  targetCtx.drawImage(textVisHoverCanvas, 0, 0, w, h);
+  targetCtx.restore();
+}
+
 function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
   if (!shouldUpdateLightMap(time, recentlyMoved)) return false;
   lastLightMapUpdateAt = time;
@@ -2307,15 +2520,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
 
   lightRawCtx.globalCompositeOperation = 'lighter';
   drawAmbientLightFill(lightRawCtx);
-  forEachLightBlob((b, isCursor) => {
-    let scale = 1.42;
-    if (isCursor) scale = 2.65;
-    else if (b.hoverTextLight) scale = 2.18;
-    else if (b.heroLight) scale = 1.58;
-    else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.5 + (b.mergeFactor ?? 0) * 0.16;
-    drawLightBlob(lightRawCtx, b, scale);
-  });
-  drawClusterGlows(lightRawCtx);
+  drawLightBlobPass(lightRawCtx);
   if (hasRollItems) {
     drawRollFocusLights(lightRawCtx, 0.9);
     drawRollFocusShadows(lightRawCtx, 'mask');
@@ -2327,6 +2532,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
     ? `brightness(${0.98 + (1 - renderScale) * 0.06}) contrast(1.55)`
     : `brightness(${1.14 + (1 - renderScale) * 0.12}) contrast(3.8)`;
   blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.55 : BLUR_MASK, maskFilter);
+  drawScatterTextLightMask(isMobile);
   return true;
 }
 
@@ -2438,6 +2644,7 @@ function drawWall() {
 
   wallCtx.globalCompositeOperation = 'source-over';
   drawEdgeWallGlow();
+  drawFrostOverlay(wallCtx);
 }
 
 function shouldRedrawWall() {
@@ -2463,13 +2670,13 @@ function getTextHoverTargetRect(el) {
   return rect;
 }
 
-function updateHoveredTextFromPointer(clientX, clientY) {
-  if (!pointerOnScreen) {
-    hoveredTextEl = null;
-    hoveredTextLightRect = null;
-    return;
-  }
+function getTextLinkEl(el) {
+  if (!el) return null;
+  if (el.classList.contains('roll-item')) return el;
+  return el.querySelector('.project__link') || el.closest('a');
+}
 
+function hitTestTextAt(clientX, clientY) {
   let hit = null;
   let hitPriority = -Infinity;
   const padX = 4;
@@ -2479,11 +2686,7 @@ function updateHoveredTextFromPointer(clientX, clientY) {
     const viewportOpen = cachedRollViewport
       ? parseFloat(cachedRollViewport.dataset.open || '0')
       : 0;
-    if (viewportOpen <= 0.01) {
-      hoveredTextEl = null;
-      hoveredTextLightRect = null;
-      return;
-    }
+    if (viewportOpen <= 0.01) return null;
 
     for (const el of cachedRollItemEls) {
       const opacity = parseFloat(el.style.opacity || '0');
@@ -2506,11 +2709,11 @@ function updateHoveredTextFromPointer(clientX, clientY) {
       }
     }
   } else {
-    for (const el of cachedScatterItems) {
+    cachedScatterItems.forEach((el, index) => {
       const title = el.querySelector('.project__title');
       const target = title || el.querySelector('.project__link') || el;
       const rect = target.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) continue;
+      if (rect.width <= 0 || rect.height <= 0) return;
 
       if (
         clientX >= rect.left - padX
@@ -2518,14 +2721,52 @@ function updateHoveredTextFromPointer(clientX, clientY) {
         && clientY >= rect.top - padY
         && clientY <= rect.bottom + padY
       ) {
-        hit = el;
-        break;
+        const priority = index;
+        if (priority > hitPriority) {
+          hitPriority = priority;
+          hit = el;
+        }
       }
-    }
+    });
   }
 
+  return hit;
+}
+
+function updateHoveredTextFromPointer(clientX, clientY) {
+  if (!pointerOnScreen) {
+    hoveredTextEl = null;
+    hoveredTextLightRect = null;
+    document.body.style.cursor = '';
+    return;
+  }
+
+  const hit = hitTestTextAt(clientX, clientY);
   hoveredTextEl = hit;
   hoveredTextLightRect = getTextHoverTargetRect(hit);
+  document.body.style.cursor = hit ? 'pointer' : '';
+}
+
+function onCanvasTextPointerDown(event) {
+  if (event.button !== 0) return;
+  if (event.target.closest('.minimal-nav, .site-logo, .detail-back')) return;
+  if (!hasRollItems && !cachedScatterItems.length) return;
+
+  const hit = hitTestTextAt(event.clientX, event.clientY);
+  if (!hit) return;
+
+  const link = getTextLinkEl(hit);
+  if (!link?.href) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (event.metaKey || event.ctrlKey || event.shiftKey) {
+    window.open(link.href, link.target || '_blank', 'noopener');
+    return;
+  }
+
+  window.location.assign(link.href);
 }
 
 function getTextHoverScale(sourceEl) {
@@ -2546,36 +2787,65 @@ function updateTextHoverScales() {
   }
 }
 
+function drawSingleTextItem(item, hovered = false, targetCtx = textCtx) {
+  const hoverScale = getTextHoverScale(item.sourceEl);
+  const fontSize = Math.round(item.fontSize);
+  targetCtx.save();
+  targetCtx.imageSmoothingEnabled = false;
+  targetCtx.globalCompositeOperation = 'source-over';
+  targetCtx.globalAlpha = hovered ? 1 : (Number.isFinite(item.opacity) ? item.opacity : 1);
+  targetCtx.font = hovered
+    ? `500 ${fontSize}px ${item.fontFamily || UI_FONT}`
+    : `400 ${fontSize}px ${item.fontFamily || UI_FONT}`;
+  targetCtx.fillStyle = hovered ? TEXT_HOVER : TEXT;
+  targetCtx.textBaseline = 'top';
+
+  const strokeHover = () => {
+    targetCtx.lineWidth = Math.max(dpr * 0.42, 0.85);
+    targetCtx.lineJoin = 'round';
+    targetCtx.miterLimit = 2;
+    targetCtx.strokeStyle = TEXT_HOVER;
+  };
+
+  if (item.align === 'center') {
+    targetCtx.textAlign = 'center';
+    targetCtx.translate(
+      Math.round(item.titleX),
+      Math.round(item.titleY - (item.fontSize * (item.scaleY ?? 1)) * 0.5)
+    );
+    targetCtx.scale((item.scaleX ?? 1) * hoverScale, (item.scaleY ?? 1) * hoverScale);
+    targetCtx.fillText(item.title, 0, 0);
+    if (hovered) {
+      strokeHover();
+      targetCtx.strokeText(item.title, 0, 0);
+    }
+    targetCtx.restore();
+    return;
+  }
+
+  targetCtx.textAlign = 'left';
+  const textWidth = item.titleWidth ?? targetCtx.measureText(item.title).width;
+  const cx = Math.round(item.titleX + textWidth * 0.5);
+  const cy = Math.round(item.titleY + item.fontSize * 0.5);
+  targetCtx.translate(cx, cy);
+  targetCtx.scale(hoverScale, hoverScale);
+  const drawX = -textWidth * 0.5;
+  const drawY = -item.fontSize * 0.5;
+  targetCtx.fillText(item.title, drawX, drawY);
+  if (hovered) {
+    strokeHover();
+    targetCtx.strokeText(item.title, drawX, drawY);
+  }
+  targetCtx.restore();
+}
+
 function drawMaskedText() {
   textCtx.clearRect(0, 0, canvas.width, canvas.height);
   updateTextHoverScales();
 
   for (const item of textItems) {
-    const hoverScale = getTextHoverScale(item.sourceEl);
-    const fontSize = Math.round(item.fontSize);
-    textCtx.font = `400 ${fontSize}px ${item.fontFamily || UI_FONT}`;
-    textCtx.fillStyle = hoverScale > 1.01 ? TEXT_HOVER : TEXT;
-    textCtx.textBaseline = 'top';
-
-    if (item.align === 'center') {
-      textCtx.save();
-      textCtx.globalAlpha = Number.isFinite(item.opacity) ? item.opacity : 1;
-      textCtx.textAlign = 'center';
-      textCtx.translate(item.titleX, item.titleY - (item.fontSize * (item.scaleY ?? 1)) * 0.5);
-      textCtx.scale((item.scaleX ?? 1) * hoverScale, (item.scaleY ?? 1) * hoverScale);
-      textCtx.fillText(item.title, 0, 0);
-      textCtx.restore();
-    } else {
-      textCtx.save();
-      textCtx.textAlign = 'left';
-      const textWidth = item.titleWidth ?? textCtx.measureText(item.title).width;
-      const cx = item.titleX + textWidth * 0.5;
-      const cy = item.titleY + item.fontSize * 0.5;
-      textCtx.translate(cx, cy);
-      textCtx.scale(hoverScale, hoverScale);
-      textCtx.fillText(item.title, -textWidth * 0.5, -item.fontSize * 0.5);
-      textCtx.restore();
-    }
+    if (item.sourceEl === hoveredTextEl) continue;
+    drawSingleTextItem(item, false);
 
     if (!item.meta) continue;
     textCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
@@ -2585,10 +2855,21 @@ function drawMaskedText() {
   }
 
   drawMaskedRollLines();
+  applyTextVisibilityMask(textCtx);
 
-  textCtx.globalCompositeOperation = 'destination-in';
-  textCtx.drawImage(lightCanvas, 0, 0, canvas.width, canvas.height);
-  textCtx.globalCompositeOperation = 'source-over';
+  if (hoveredTextEl && hoverTextCtx) {
+    const w = canvas.width;
+    const h = canvas.height;
+    hoverTextCtx.clearRect(0, 0, w, h);
+    for (const item of textItems) {
+      if (item.sourceEl !== hoveredTextEl) continue;
+      drawSingleTextItem(item, true, hoverTextCtx);
+    }
+    applyHoveredTextVisibilityMask(hoverTextCtx);
+    textCtx.drawImage(hoverTextCanvas, 0, 0);
+  }
+
+  lastPaintedHoveredTextEl = hoveredTextEl;
   lastTextCanvasDrawAt = lastRenderAt;
 }
 
@@ -2596,6 +2877,7 @@ function shouldRedrawTextCanvas(recentlyMoved, dynamicTextChanged) {
   if (dynamicTextChanged) return true;
   if (recentlyMoved) return true;
   if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
+  if (hoveredTextEl !== lastPaintedHoveredTextEl) return true;
   if (hasRollItems) return true;
   if (lastLightMapUpdateAt > lastTextCanvasDrawAt) return true;
   if (lastShadowLayerAt > lastTextCanvasDrawAt) return true;
@@ -2790,6 +3072,7 @@ function drawMobileBackdrop(time) {
   if (hoverTextLight.opacity > 0.025) drawMobileSoftLight(wallCtx, getHoverTextLightBlob(), 1.8, 0.84);
   drawMobileSoftLight(wallCtx, getCursorLightBlob(), 1.65, 0.72);
   wallCtx.restore();
+  drawFrostOverlay(wallCtx);
 }
 
 function drawMobileLightMap() {
@@ -2812,6 +3095,7 @@ function drawMobileLightMap() {
   lightCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightCtx);
   lastLightMapUpdateAt = lastRenderAt;
+  drawScatterTextLightMask(true);
 }
 
 function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
@@ -2845,7 +3129,6 @@ function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
 
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
-  drawFrostOverlay();
 }
 
 function render(time) {
@@ -2869,7 +3152,7 @@ function render(time) {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
   const recentlyMoved = time - lastPointerMove < 120;
-  sceneIdle = !recentlyMoved && !pointerOnScreen && !hasRollItems && !hoverTextLight.active;
+  sceneIdle = !recentlyMoved && !pointerOnScreen && !hasRollItems && !hoverTextLight.active && !hoveredTextEl;
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
@@ -2906,7 +3189,6 @@ function render(time) {
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
   if (perfTier < 2) drawTyndallEffect(time);
-  drawFrostOverlay();
 
   requestAnimationFrame(render);
 }
@@ -2930,6 +3212,7 @@ function onPointerLeave() {
   pointerOnScreen = false;
   hoveredTextEl = null;
   hoveredTextLightRect = null;
+  document.body.style.cursor = '';
   mouse.targetX = 0.5;
   mouse.targetY = 0.5;
   lastShadowLayerAt = 0;
@@ -2954,6 +3237,7 @@ window.addEventListener('scroll', measureTextItems, { passive: true });
 document.documentElement.addEventListener('pointerenter', onPointerEnter);
 document.documentElement.addEventListener('pointermove', onPointerMove, { passive: true });
 document.documentElement.addEventListener('pointerleave', onPointerLeave);
+document.documentElement.addEventListener('pointerdown', onCanvasTextPointerDown, true);
 document.documentElement.addEventListener('touchstart', onPointerMove, { passive: true });
 document.documentElement.addEventListener('touchmove', onPointerMove, { passive: true });
 document.documentElement.addEventListener('touchend', onPointerLeave, { passive: true });
@@ -2966,4 +3250,6 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-document.fonts.ready.then(measureTextItems);
+document.fonts.ready.then(() => {
+  measureTextItems();
+});
