@@ -893,8 +893,7 @@ function drawTyndallEffect(time) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
-function drawFrostOverlay(force = false) {
-  if (!force && sceneIdle && perfTier >= 1) return;
+function drawFrostOverlay() {
   const w = canvas.width;
   const h = canvas.height;
   if (!frostPattern && !grainPattern) return;
@@ -913,6 +912,23 @@ function drawFrostOverlay(force = false) {
     ctx.fillRect(0, 0, w, h);
   }
   ctx.restore();
+}
+
+function drawAmbientLightFill(targetCtx) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w * 0.5;
+  const cy = h * 0.4;
+  const rad = Math.max(w, h) * 0.82;
+  const grad = targetCtx.createRadialGradient(cx, cy, rad * 0.08, cx, cy, rad);
+  grad.addColorStop(0, 'rgba(255,251,244,0.2)');
+  grad.addColorStop(0.45, 'rgba(255,249,238,0.11)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  targetCtx.save();
+  targetCtx.globalCompositeOperation = 'lighter';
+  targetCtx.fillStyle = grad;
+  targetCtx.fillRect(0, 0, w, h);
+  targetCtx.restore();
 }
 
 function refreshDomCaches() {
@@ -1356,7 +1372,7 @@ function updateCursorLight(time) {
     Math.sin(t * cursorLight.sizeFreq * 1.7) * cursorLight.sizeAmp * 0.45;
   cursorLight.renderRadius = cursorLight.baseRadius * sizePulse;
 
-  const breathe = pointerOnScreen ? 0.12 : 0.08;
+  const breathe = 0.12;
   cursorLight.renderRx = 0.86 + Math.sin(t * 0.9) * breathe;
   cursorLight.renderRy = 0.86 + Math.cos(t * 0.75) * breathe;
 }
@@ -1906,8 +1922,6 @@ function fillShadowBase(targetCtx) {
 }
 
 function applyOrganicShadowEdgeBlend(targetCtx) {
-  if (sceneIdle && perfTier >= 3) return;
-
   const w = canvas.width;
   const h = canvas.height;
   targetCtx.globalCompositeOperation = 'destination-out';
@@ -2251,6 +2265,7 @@ function drawLightBokehLayer(time = lastRenderAt) {
   beginBufferDraw(lightBokehRawCtx);
   lightBokehRawCtx.clearRect(0, 0, w, h);
   lightBokehRawCtx.globalCompositeOperation = 'lighter';
+  drawAmbientLightFill(lightBokehRawCtx);
   forEachLightBlob((b, isCursor) => {
     let scale = 1.38;
     if (isCursor) scale = 2.55;
@@ -2277,8 +2292,7 @@ function shouldUpdateLightMap(time, recentlyMoved) {
 
 function shouldSyncBokehFromLightMap(time) {
   if (width < MOBILE_BREAKPOINT || perfTier < 2) return false;
-  const interval = sceneIdle ? DESKTOP_BOKEH_IDLE_FRAME_MS : DESKTOP_BOKEH_FRAME_MS;
-  return time - lastBokehUpdateAt >= interval;
+  return time - lastBokehUpdateAt >= DESKTOP_BOKEH_IDLE_FRAME_MS;
 }
 
 function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
@@ -2292,6 +2306,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
   lightRawCtx.clearRect(0, 0, w, h);
 
   lightRawCtx.globalCompositeOperation = 'lighter';
+  drawAmbientLightFill(lightRawCtx);
   forEachLightBlob((b, isCursor) => {
     let scale = 1.42;
     if (isCursor) scale = 2.65;
@@ -2416,12 +2431,10 @@ function drawWall() {
 
   if (hasRollItems) drawRollFocusShadows(wallCtx, 'wall');
 
-  if (perfTier < 3) {
-    wallCtx.globalCompositeOperation = 'lighter';
-    wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
-    wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
-    wallCtx.globalAlpha = 1;
-  }
+  wallCtx.globalCompositeOperation = 'lighter';
+  wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.28);
+  wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
+  wallCtx.globalAlpha = 1;
 
   wallCtx.globalCompositeOperation = 'source-over';
   drawEdgeWallGlow();
@@ -2766,6 +2779,7 @@ function drawMobileBackdrop(time) {
 
   wallCtx.save();
   wallCtx.globalCompositeOperation = 'screen';
+  drawAmbientLightFill(wallCtx);
   for (let i = 0; i < lights.length; i++) {
     const light = lights[i];
     const sizeShift = 0.9 + (i % 3) * 0.22;
@@ -2782,6 +2796,7 @@ function drawMobileLightMap() {
   beginBufferDraw(lightCtx);
   lightCtx.clearRect(0, 0, canvas.width, canvas.height);
   lightCtx.globalCompositeOperation = 'lighter';
+  drawAmbientLightFill(lightCtx);
 
   const lights = getMobileLightSources();
   for (let i = 0; i < lights.length; i++) {
@@ -2890,7 +2905,7 @@ function render(time) {
 
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
-  if (perfTier < 2 && !sceneIdle) drawTyndallEffect(time);
+  if (perfTier < 2) drawTyndallEffect(time);
   drawFrostOverlay();
 
   requestAnimationFrame(render);
