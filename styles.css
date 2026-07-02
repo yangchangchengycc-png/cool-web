@@ -374,7 +374,7 @@ body::before {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 2.5vh 4.7vw 0 4.7vw;
+  padding: 2.5vh 4.7vw 0 2.5vh;
   pointer-events: none;
 }
 
