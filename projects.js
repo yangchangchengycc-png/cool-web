@@ -76,8 +76,15 @@ window.PROJECT_PAGES = {
     media: {
       photo: [
         { src: '../assets/projects/precarious-force-hero.jpg', alt: 'you can\u2019t step into the same river twice' },
+        { src: '../assets/projects/precarious-force-01.png', alt: 'you can\u2019t step into the same river twice detail' },
       ],
-      video: [],
+      video: [
+        {
+          youtube: 's8IcE48qEbI',
+          poster: '../assets/projects/precarious-force-hero.jpg',
+          alt: 'you can\u2019t step into the same river twice video',
+        },
+      ],
     },
   },
   'trees-in-the-plastic-boxes': {

@@ -545,7 +545,7 @@ body.layout-detail::before {
   position: relative;
   width: 100%;
   aspect-ratio: 1.55 / 1;
-  border: 1px solid rgba(0, 0, 0, 0.88);
+  border: 4px solid rgba(0, 0, 0, 0.88);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
@@ -556,15 +556,46 @@ body.layout-detail::before {
 }
 
 .project-stage__empty {
-  font-size: 0.82rem;
+  font-size: calc(0.82rem + 1px);
+  font-weight: 500;
   color: rgba(0, 0, 0, 0.42);
 }
 
-.project-stage__media {
+.project-stage__media,
+.project-stage__poster {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.project-stage__poster {
+  position: absolute;
+  inset: 0;
+}
+
+.project-stage__youtube {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.project-stage.is-video.is-playing .project-stage__youtube {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.project-stage.is-video.is-playing .project-stage__poster {
+  opacity: 0;
+}
+
+.project-stage-wrap.is-playing .project-play {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .project-play {
@@ -582,6 +613,8 @@ body.layout-detail::before {
   display: grid;
   place-items: center;
   padding-left: 0.15rem;
+  z-index: 2;
+  transition: opacity 160ms ease;
 }
 
 .project-play.is-playing svg {
@@ -598,6 +631,13 @@ body.layout-detail::before {
   background: transparent;
   color: rgba(0, 0, 0, 0.72);
   cursor: pointer;
+  z-index: 2;
+}
+
+.project-nav[hidden],
+.project-expand[hidden],
+.project-play[hidden] {
+  display: none;
 }
 
 .project-controls {
@@ -610,10 +650,11 @@ body.layout-detail::before {
 .project-title-box,
 .project-tab {
   min-height: 2.35rem;
-  border: 1px solid rgba(0, 0, 0, 0.88);
+  border: 4px solid rgba(0, 0, 0, 0.88);
   background: transparent;
   font-family: var(--font-ui);
-  font-size: clamp(0.72rem, 0.95vw, 0.86rem);
+  font-size: calc(clamp(0.72rem, 0.95vw, 0.86rem) + 1px);
+  font-weight: 500;
   line-height: 1.25;
   color: rgba(0, 0, 0, 0.82);
 }
@@ -637,11 +678,12 @@ body.layout-detail::before {
 
 .project-tab.is-active {
   background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
 }
 
 .project-tab:disabled {
-  opacity: 0.35;
-  cursor: default;
+  opacity: 1;
+  cursor: pointer;
 }
 
 .project-info-col {
@@ -663,13 +705,13 @@ body.layout-detail::before {
 .project-rule::before {
   content: '';
   width: 100%;
-  height: 1px;
+  height: 4px;
   background: rgba(0, 0, 0, 0.55);
 }
 
 .project-rule__dash {
   width: 2.35rem;
-  height: 3px;
+  height: 6px;
   background: rgba(0, 0, 0, 0.88);
 }
 
@@ -682,7 +724,8 @@ body.layout-detail::before {
 }
 
 .project-statement {
-  font-size: clamp(0.78rem, 0.95vw, 0.92rem);
+  font-size: calc(clamp(0.78rem, 0.95vw, 0.92rem) + 1px);
+  font-weight: 500;
   line-height: 1.65;
   text-align: justify;
   color: rgba(0, 0, 0, 0.78);
@@ -692,8 +735,9 @@ body.layout-detail::before {
   display: inline-block;
   align-self: flex-start;
   padding: 0.22rem 0.62rem;
-  border: 1px solid rgba(0, 0, 0, 0.88);
-  font-size: 0.78rem;
+  border: 4px solid rgba(0, 0, 0, 0.88);
+  font-size: calc(0.78rem + 1px);
+  font-weight: 600;
   line-height: 1.2;
   color: rgba(0, 0, 0, 0.82);
 }
@@ -704,28 +748,89 @@ body.layout-detail::before {
 }
 
 .project-meta__list dt {
-  font-size: clamp(0.78rem, 0.92vw, 0.88rem);
-  font-weight: 500;
+  font-size: calc(clamp(0.78rem, 0.92vw, 0.88rem) + 1px);
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.82);
 }
 
 .project-meta__list dd {
   margin: 0;
-  font-size: clamp(0.76rem, 0.88vw, 0.86rem);
+  font-size: calc(clamp(0.76rem, 0.88vw, 0.86rem) + 1px);
+  font-weight: 500;
   line-height: 1.45;
   color: rgba(0, 0, 0, 0.52);
 }
 
 .project-contact-line {
-  font-size: clamp(0.78rem, 0.92vw, 0.88rem);
+  font-size: calc(clamp(0.78rem, 0.92vw, 0.88rem) + 1px);
+  font-weight: 500;
   line-height: 1.6;
   color: rgba(0, 0, 0, 0.62);
 }
 
 .project-meta__label {
   display: block;
-  font-weight: 500;
+  font-weight: 600;
   color: rgba(0, 0, 0, 0.82);
+}
+
+.project-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  align-content: center;
+  gap: 1rem;
+  padding: 4rem 1.5rem 2rem;
+  background: rgba(239, 239, 236, 0.96);
+}
+
+.project-lightbox[hidden] {
+  display: none;
+}
+
+body.project-lightbox-open {
+  overflow: hidden;
+}
+
+.project-lightbox__close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  border: 0;
+  background: transparent;
+  font-size: 2rem;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+}
+
+.project-lightbox__nav {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 1.6rem;
+  border: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.82);
+  cursor: pointer;
+}
+
+.project-lightbox__nav:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.project-lightbox__image {
+  max-width: min(92vw, 110rem);
+  max-height: calc(100vh - 8rem);
+  max-height: calc(100svh - 8rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 4px solid rgba(0, 0, 0, 0.88);
 }
 
 .layout-work {
