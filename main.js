@@ -202,8 +202,8 @@ function updatePerfProfile() {
     dpr = Math.min(rawDpr, 1.35);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.48;
-    dpr = Math.min(rawDpr, 1.1);
+    renderScale = 0.45;
+    dpr = Math.min(rawDpr, 1.08);
   } else if (width >= 1400) {
     perfTier = 2;
     renderScale = 0.54;
@@ -229,12 +229,13 @@ function endBufferDraw(targetCtx) {
   targetCtx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
-function allowsIdleLayerWork(phase) {
-  if (width < MOBILE_BREAKPOINT) return true;
-  if (hasRollItems || pointerOnScreen || hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
-  if (!sceneIdle || perfTier < 2) return true;
-  if (renderFrame <= 3 || lastShadowLayerAt === 0 || lastBokehUpdateAt === 0 || lastLightMapUpdateAt === 0) return true;
-  return renderFrame % 3 === phase;
+function syncBokehFromLightMap() {
+  const isMobile = width < MOBILE_BREAKPOINT;
+  const bokehBright = isMobile ? 1.04 : 1.1 + (1 - renderScale) * 0.28;
+  lightBokehCtx.clearRect(0, 0, lightBokehCanvas.width, lightBokehCanvas.height);
+  lightBokehCtx.filter = `brightness(${bokehBright})`;
+  lightBokehCtx.drawImage(lightCanvas, 0, 0, lightBokehCanvas.width, lightBokehCanvas.height);
+  lightBokehCtx.filter = 'none';
 }
 
 function refreshLightBlobs() {
@@ -1345,8 +1346,6 @@ function updateWind(time) {
 }
 
 function updateCursorLight(time) {
-  if (!pointerOnScreen && hoverTextLight.opacity < 0.01) return;
-
   const t = time * 0.001;
   cursorLight.renderX = smoothMouse.x * canvas.width;
   cursorLight.renderY = smoothMouse.y * canvas.height;
@@ -1426,7 +1425,7 @@ function getHoverTextLightBlob() {
 function forEachLightBlob(callback) {
   for (const b of cachedLightBlobs) callback(b, false);
   if (hoverTextLight.opacity > 0.025) callback(getHoverTextLightBlob(), false);
-  if (pointerOnScreen) callback(getCursorLightBlob(), true);
+  callback(getCursorLightBlob(), true);
 }
 
 function getMouseFollowWeight(baseX, baseY, anchorX, anchorY, parallax = 0.4) {
@@ -2090,7 +2089,7 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
   const dw = destCanvas.width;
   const dh = destCanvas.height;
   destCtx.clearRect(0, 0, dw, dh);
-  const tierBlurScale = perfTier >= 3 ? 0.76 : perfTier >= 2 ? 0.88 : 1;
+  const tierBlurScale = perfTier >= 3 ? 0.72 : perfTier >= 2 ? 0.84 : 1;
   const blurPx = amount * renderScale * tierBlurScale;
   destCtx.filter = extraFilter ? `blur(${blurPx}px) ${extraFilter}` : `blur(${blurPx}px)`;
   destCtx.drawImage(source, 0, 0, dw, dh);
@@ -2209,12 +2208,10 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
 }
 
 function drawShadowLayer() {
-  if (!allowsIdleLayerWork(0)) return;
-
   const isMobile = width < MOBILE_BREAKPOINT;
   const shadowInterval = isMobile
     ? 0
-    : (perfTier >= 3 ? 1000 / 22 : perfTier >= 2 ? 1000 / 26 : DESKTOP_SHADOW_FRAME_MS);
+    : (perfTier >= 3 ? 1000 / 20 : perfTier >= 2 ? 1000 / 24 : DESKTOP_SHADOW_FRAME_MS);
   if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < shadowInterval) return;
   lastShadowLayerAt = lastRenderAt;
 
@@ -2240,12 +2237,12 @@ function drawShadowLayer() {
 }
 
 function drawLightBokehLayer(time = lastRenderAt) {
-  if (!allowsIdleLayerWork(1)) return;
-
   const isMobile = width < MOBILE_BREAKPOINT;
+  if (perfTier >= 2) return;
+
   const bokehInterval = isMobile
     ? 0
-    : (sceneIdle ? DESKTOP_BOKEH_IDLE_FRAME_MS * (perfTier >= 3 ? 1.2 : 1) : DESKTOP_BOKEH_FRAME_MS);
+    : (sceneIdle ? DESKTOP_BOKEH_IDLE_FRAME_MS : DESKTOP_BOKEH_FRAME_MS);
   if (!isMobile && time - lastBokehUpdateAt < bokehInterval) return;
   lastBokehUpdateAt = time;
 
@@ -2262,7 +2259,7 @@ function drawLightBokehLayer(time = lastRenderAt) {
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.48 + (b.mergeFactor ?? 0) * 0.18;
     drawLightBlob(lightBokehRawCtx, b, scale);
   });
-  if (!(sceneIdle && perfTier >= 3)) drawClusterGlows(lightBokehRawCtx);
+  drawClusterGlows(lightBokehRawCtx);
   if (hasRollItems) drawRollFocusLights(lightBokehRawCtx, 0.55);
   lightBokehRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightBokehRawCtx);
@@ -2272,16 +2269,20 @@ function drawLightBokehLayer(time = lastRenderAt) {
 
 function shouldUpdateLightMap(time, recentlyMoved) {
   if (width < MOBILE_BREAKPOINT) return true;
-  if (recentlyMoved) return true;
-  if (hasRollItems) return time - lastLightMapUpdateAt >= DESKTOP_LIGHT_FRAME_MS;
-  if (pointerOnScreen) return time - lastLightMapUpdateAt >= DESKTOP_LIGHT_FRAME_MS;
-  if (sceneIdle) return time - lastLightMapUpdateAt >= DESKTOP_IDLE_LIGHT_FRAME_MS * 1.35;
+  if (recentlyMoved || hasRollItems || hoverTextLight.active || hoverTextLight.opacity > 0.03) {
+    return time - lastLightMapUpdateAt >= DESKTOP_LIGHT_FRAME_MS;
+  }
   return time - lastLightMapUpdateAt >= DESKTOP_IDLE_LIGHT_FRAME_MS;
+}
+
+function shouldSyncBokehFromLightMap(time) {
+  if (width < MOBILE_BREAKPOINT || perfTier < 2) return false;
+  const interval = sceneIdle ? DESKTOP_BOKEH_IDLE_FRAME_MS : DESKTOP_BOKEH_FRAME_MS;
+  return time - lastBokehUpdateAt >= interval;
 }
 
 function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
   if (!shouldUpdateLightMap(time, recentlyMoved)) return false;
-  if (!allowsIdleLayerWork(2)) return false;
   lastLightMapUpdateAt = time;
 
   const isMobile = width < MOBILE_BREAKPOINT;
@@ -2299,7 +2300,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
     else if ((b.mergeFactor ?? 0) > 0.35) scale = 1.5 + (b.mergeFactor ?? 0) * 0.16;
     drawLightBlob(lightRawCtx, b, scale);
   });
-  if (!(sceneIdle && perfTier >= 3)) drawClusterGlows(lightRawCtx);
+  drawClusterGlows(lightRawCtx);
   if (hasRollItems) {
     drawRollFocusLights(lightRawCtx, 0.9);
     drawRollFocusShadows(lightRawCtx, 'mask');
@@ -2407,13 +2408,15 @@ function drawWall() {
   if (isMobile) drawMobileAmbientLightBlend();
 
   wallCtx.globalCompositeOperation = 'screen';
-  wallCtx.globalAlpha = isMobile ? 0.88 : Math.min(0.94 * lightBrightBoost, 1);
+  wallCtx.globalAlpha = isMobile
+    ? 0.88
+    : Math.min((perfTier >= 3 ? 0.98 : 0.94) * lightBrightBoost, 1);
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
   if (hasRollItems) drawRollFocusShadows(wallCtx, 'wall');
 
-  if (perfTier < 3 && (!sceneIdle || perfTier < 2)) {
+  if (perfTier < 3) {
     wallCtx.globalCompositeOperation = 'lighter';
     wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
     wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
@@ -2421,8 +2424,7 @@ function drawWall() {
   }
 
   wallCtx.globalCompositeOperation = 'source-over';
-
-  if (!sceneIdle || perfTier < 2) drawEdgeWallGlow();
+  drawEdgeWallGlow();
 }
 
 function shouldRedrawWall() {
@@ -2579,7 +2581,7 @@ function drawMaskedText() {
 
 function shouldRedrawTextCanvas(recentlyMoved, dynamicTextChanged) {
   if (dynamicTextChanged) return true;
-  if (recentlyMoved || pointerOnScreen) return true;
+  if (recentlyMoved) return true;
   if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
   if (hasRollItems) return true;
   if (lastLightMapUpdateAt > lastTextCanvasDrawAt) return true;
@@ -2772,7 +2774,7 @@ function drawMobileBackdrop(time) {
     if (i === 0) drawMobileUpperHighlight(wallCtx, light);
   }
   if (hoverTextLight.opacity > 0.025) drawMobileSoftLight(wallCtx, getHoverTextLightBlob(), 1.8, 0.84);
-  if (pointerOnScreen) drawMobileSoftLight(wallCtx, getCursorLightBlob(), 1.65, 0.72);
+  drawMobileSoftLight(wallCtx, getCursorLightBlob(), 1.65, 0.72);
   wallCtx.restore();
 }
 
@@ -2790,7 +2792,7 @@ function drawMobileLightMap() {
     if (i === 0) drawMobileUpperHighlight(lightCtx, light);
   }
   if (hoverTextLight.opacity > 0.025) drawMobileSoftLight(lightCtx, getHoverTextLightBlob(), 1.72, 0.92);
-  if (pointerOnScreen) drawMobileSoftLight(lightCtx, getCursorLightBlob(), 1.55, 0.75);
+  drawMobileSoftLight(lightCtx, getCursorLightBlob(), 1.55, 0.75);
 
   lightCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightCtx);
@@ -2807,7 +2809,6 @@ function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
   updateBlobs(time);
 
   const backdropDue = recentlyMoved
-    || pointerOnScreen
     || hoverTextLight.active
     || time - lastMobileBackdropAt >= MOBILE_BACKDROP_IDLE_MS;
   if (backdropDue) {
@@ -2817,7 +2818,6 @@ function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
 
   const lightDue = backdropDue
     || recentlyMoved
-    || pointerOnScreen
     || hoverTextLight.active
     || hoverTextLight.opacity > 0.03
     || time - lastMobileLightAt >= MOBILE_LIGHT_IDLE_MS;
@@ -2826,14 +2826,11 @@ function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
     lastMobileLightAt = time;
   }
 
-  const textRedrawn = drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
-  const needsComposite = backdropDue || lightDue || textRedrawn || recentlyMoved || pointerOnScreen;
+  drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
 
-  if (needsComposite) {
-    ctx.drawImage(wallCanvas, 0, 0);
-    ctx.drawImage(textCanvas, 0, 0);
-    drawFrostOverlay();
-  }
+  ctx.drawImage(wallCanvas, 0, 0);
+  ctx.drawImage(textCanvas, 0, 0);
+  drawFrostOverlay();
 }
 
 function render(time) {
@@ -2842,7 +2839,9 @@ function render(time) {
     return;
   }
 
-  const targetFrameMs = width < MOBILE_BREAKPOINT ? MOBILE_TARGET_FRAME_MS : DESKTOP_TARGET_FRAME_MS;
+  const targetFrameMs = width < MOBILE_BREAKPOINT
+    ? MOBILE_TARGET_FRAME_MS
+    : (perfTier >= 3 ? 1000 / 50 : DESKTOP_TARGET_FRAME_MS);
   if (lastRenderAt && time - lastRenderAt < targetFrameMs) {
     requestAnimationFrame(render);
     return;
@@ -2877,18 +2876,22 @@ function render(time) {
   updateCursorLight(time);
   updateBlobs(time);
   drawShadowLayer();
-  drawLightBokehLayer(time);
-  drawLightMap(time, recentlyMoved);
-  const wallRedrawn = drawWallIfNeeded();
-  const textRedrawn = drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
-  const overlayActive = !sceneIdle || perfTier < 2;
-
-  if (wallRedrawn || textRedrawn || overlayActive) {
-    ctx.drawImage(wallCanvas, 0, 0);
-    ctx.drawImage(textCanvas, 0, 0);
-    if (overlayActive) drawTyndallEffect(time);
-    drawFrostOverlay();
+  const lightUpdated = drawLightMap(time, recentlyMoved);
+  if (perfTier >= 2) {
+    if (lightUpdated || shouldSyncBokehFromLightMap(time)) {
+      syncBokehFromLightMap();
+      lastBokehUpdateAt = time;
+    }
+  } else {
+    drawLightBokehLayer(time);
   }
+  drawWallIfNeeded();
+  drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
+
+  ctx.drawImage(wallCanvas, 0, 0);
+  ctx.drawImage(textCanvas, 0, 0);
+  if (perfTier < 2 && !sceneIdle) drawTyndallEffect(time);
+  drawFrostOverlay();
 
   requestAnimationFrame(render);
 }
@@ -2914,6 +2917,10 @@ function onPointerLeave() {
   hoveredTextLightRect = null;
   mouse.targetX = 0.5;
   mouse.targetY = 0.5;
+  lastShadowLayerAt = 0;
+  lastBokehUpdateAt = 0;
+  lastLightMapUpdateAt = 0;
+  lastTextCanvasDrawAt = -1;
 }
 
 resize();
