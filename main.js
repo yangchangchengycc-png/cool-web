@@ -453,7 +453,7 @@ function initBlobs() {
 
   const lightCount = isMobile
     ? 4 + Math.floor(Math.random() * 2)
-    : Math.round((perfTier >= 3 ? 26 : perfTier >= 2 ? 32 : 36) * areaScale);
+    : Math.round((perfTier >= 3 ? 22 : perfTier >= 2 ? 28 : 32) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
     if (isMobile) radius *= MOBILE_DESKTOP_CROP_SCALE;
@@ -1168,12 +1168,21 @@ function updateScatterMotion(time) {
   return true;
 }
 
+function getScatterMotionOffset(layout, time = lastRenderAt) {
+  if (!layout) return { x: 0, y: 0 };
+  return {
+    x: Math.sin(time * layout.speed + layout.phase) * layout.ampX * dpr,
+    y: Math.cos(time * layout.speed * 0.82 + layout.phase) * layout.ampY * dpr,
+  };
+}
+
 function recentlyMovedActive() {
   return performance.now() - lastPointerMove < 120;
 }
 
-function measureTextItems() {
-  refreshDomCaches();
+function measureTextItems(options = {}) {
+  const { refreshDom = true } = options;
+  if (refreshDom) refreshDomCaches();
   textItems = [];
 
   const canvasRect = getCanvasRect();
@@ -1190,19 +1199,22 @@ function measureTextItems() {
     textCtx.font = `400 ${fontSize}px ${fontFamily}`;
     const titleWidth = textCtx.measureText(title.textContent.trim()).width;
 
+    const scatterLayout = scatterLayoutItems.find((item) => item.el === el) ?? null;
+    const motion = getScatterMotionOffset(scatterLayout, lastRenderAt || performance.now());
     textItems.push({
       title: title.textContent.trim(),
       meta: meta?.textContent.trim() ?? '',
-      titleX: (titleRect.left - canvasRect.left) * dpr,
-      titleY: (titleRect.top - canvasRect.top) * dpr,
-      metaX: metaRect ? (metaRect.left - canvasRect.left) * dpr : 0,
-      metaY: metaRect ? (metaRect.top - canvasRect.top) * dpr : 0,
+      titleX: (titleRect.left - canvasRect.left) * dpr - motion.x,
+      titleY: (titleRect.top - canvasRect.top) * dpr - motion.y,
+      metaX: metaRect ? (metaRect.left - canvasRect.left) * dpr - motion.x : 0,
+      metaY: metaRect ? (metaRect.top - canvasRect.top) * dpr - motion.y : 0,
       fontSize,
       metaSize: meta ? parseFloat(getComputedStyle(meta).fontSize) * dpr : 0,
       fontFamily,
       titleWidth,
       align: 'left',
       sourceEl: el,
+      scatterLayout,
     });
   });
 
@@ -2479,13 +2491,20 @@ function drawLightBlobPass(targetCtx) {
   drawClusterGlows(targetCtx);
 }
 
-function updateScatterTextMaskRaw() {
+function updateScatterTextMaskRaw(isMobile = width < MOBILE_BREAKPOINT) {
   if (!needsScatterTextMask() || !textMaskRawCtx) return;
 
   const w = canvas.width;
   const h = canvas.height;
   beginBufferDraw(textMaskRawCtx);
   textMaskRawCtx.clearRect(0, 0, w, h);
+
+  if (isMobile) {
+    textMaskRawCtx.drawImage(lightCanvas, 0, 0, textMaskRawCanvas.width, textMaskRawCanvas.height);
+    endBufferDraw(textMaskRawCtx);
+    return;
+  }
+
   textMaskRawCtx.globalCompositeOperation = 'lighter';
   drawLightBlobPass(textMaskRawCtx);
   textMaskRawCtx.globalCompositeOperation = 'source-over';
@@ -2494,6 +2513,7 @@ function updateScatterTextMaskRaw() {
 
 function composeScatterTextVisibilityLight(isMobile = width < MOBILE_BREAKPOINT) {
   if (!needsScatterTextMask() || !textVisLightCtx) return;
+  if (sceneIdle && !hoverTextLight.active && renderFrame % 2 !== 0) return;
 
   const w = textVisW;
   const h = textVisH;
@@ -2969,9 +2989,10 @@ function drawSingleTextItem(item, hovered = false, targetCtx = textCtx) {
   }
 
   targetCtx.textAlign = 'left';
+  const motion = getScatterMotionOffset(item.scatterLayout);
   const textWidth = item.titleWidth ?? targetCtx.measureText(item.title).width;
-  const cx = Math.round(item.titleX + textWidth * 0.5);
-  const cy = Math.round(item.titleY + item.fontSize * 0.5);
+  const cx = Math.round(item.titleX + textWidth * 0.5 + motion.x);
+  const cy = Math.round(item.titleY + item.fontSize * 0.5 + motion.y);
   targetCtx.translate(cx, cy);
   targetCtx.scale(hoverScale, hoverScale);
   const drawX = -textWidth * 0.5;
@@ -3017,10 +3038,11 @@ function rebuildTextGeometryIfNeeded(force = false) {
     drawSingleTextItem(item, false, textGeometryCtx);
 
     if (!item.meta) continue;
+    const motion = getScatterMotionOffset(item.scatterLayout);
     textGeometryCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
     textGeometryCtx.fillStyle = TEXT_META;
     textGeometryCtx.textAlign = 'left';
-    textGeometryCtx.fillText(item.meta, item.metaX, item.metaY);
+    textGeometryCtx.fillText(item.meta, item.metaX + motion.x, item.metaY + motion.y);
   }
 
   lastTextGeometryDrawAt = lastRenderAt;
@@ -3046,9 +3068,16 @@ function drawMaskedText() {
     drawMaskedRollLines();
     applyTextVisibilityMask(textCtx);
   } else {
-    rebuildTextGeometryIfNeeded();
-    if (textGeometryCanvas) {
-      textCtx.drawImage(textGeometryCanvas, 0, 0);
+    for (const item of textItems) {
+      if (item.sourceEl === hoveredTextEl) continue;
+      drawSingleTextItem(item, false);
+
+      if (!item.meta) continue;
+      const motion = getScatterMotionOffset(item.scatterLayout);
+      textCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
+      textCtx.fillStyle = TEXT_META;
+      textCtx.textAlign = 'left';
+      textCtx.fillText(item.meta, item.metaX + motion.x, item.metaY + motion.y);
     }
     applyTextVisibilityMask(textCtx);
   }
@@ -3093,7 +3122,7 @@ function shouldRedrawTextCanvas(recentlyMoved, dynamicTextChanged) {
   }
 
   if (lastTextCanvasDrawAt < 0) return true;
-  if (textGeometryStamp() !== lastTextGeometryStamp) return true;
+  if (scatterLayoutItems.length) return true;
 
   const drawInterval = recentlyMoved ? DESKTOP_TEXT_DRAW_ACTIVE_MS : DESKTOP_TEXT_DRAW_IDLE_MS;
   if (lastRenderAt - lastTextCanvasDrawAt < drawInterval) return false;
@@ -3351,7 +3380,7 @@ function render(time) {
   }
 
   const recentlyMoved = time - lastPointerMove < 120;
-  sceneIdle = !recentlyMoved && !hasRollItems && !hoverTextLight.active && !hoveredTextEl;
+  sceneIdle = !recentlyMoved && !pointerOnScreen && !hasRollItems && !hoverTextLight.active && !hoveredTextEl;
 
   const targetFrameMs = width < MOBILE_BREAKPOINT
     ? MOBILE_TARGET_FRAME_MS
@@ -3377,8 +3406,8 @@ function render(time) {
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   const dynamicTextChanged = updateScatterMotion(time) || hasRollItems;
   const measureInterval = sceneIdle ? DESKTOP_TEXT_MEASURE_IDLE_MS : DESKTOP_TEXT_MEASURE_MS;
-  if (dynamicTextChanged && time - lastDynamicTextMeasureAt > measureInterval) {
-    measureTextItems();
+  if (hasRollItems && time - lastDynamicTextMeasureAt > measureInterval) {
+    measureTextItems({ refreshDom: false });
     lastDynamicTextMeasureAt = time;
   }
   updateHoveredTextFromPointer(pointerClientX, pointerClientY);
@@ -3447,7 +3476,7 @@ window.addEventListener('resize', () => {
   }, 120);
 });
 
-window.addEventListener('scroll', measureTextItems, { passive: true });
+window.addEventListener('scroll', () => measureTextItems({ refreshDom: false }), { passive: true });
 document.documentElement.addEventListener('pointerenter', onPointerEnter);
 document.documentElement.addEventListener('pointermove', onPointerMove, { passive: true });
 document.documentElement.addEventListener('pointerleave', onPointerLeave);
