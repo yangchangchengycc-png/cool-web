@@ -482,7 +482,7 @@ body::before {
   overflow-x: hidden;
   --project-line: 2px;
   --project-line-color: #000;
-  --project-ui-scale: 0.64;
+  --project-ui-scale: 0.512;
   --project-nav-height: 1.35rem;
   --project-viewer-gap: 0.55rem;
   --project-stage-top: calc(var(--project-nav-height) + var(--project-viewer-gap));
