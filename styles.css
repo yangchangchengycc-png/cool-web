@@ -735,7 +735,7 @@ body.layout-detail::before {
 
 .project-rule--top::before,
 .project-rule--top .project-rule__dash {
-  background: var(--project-line-color);
+  background: #000;
 }
 
 .project-rule__dash {
