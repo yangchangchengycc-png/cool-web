@@ -42,6 +42,9 @@ let pageVisible = true;
 let lastTextCanvasDrawAt = -1;
 let lastTextVisLightBuildAt = -1;
 let lastTextVisBuildAt = -1;
+let lastTextVisShadowAt = -1;
+let lastTextGeometryDrawAt = -1;
+let lastTextGeometryStamp = '';
 let cachedHoverMaskTarget = null;
 let lastHoverMaskBuildAt = -1;
 let wallBaseCanvas = null;
@@ -69,6 +72,11 @@ const DESKTOP_FX_FRAME_MS = 1000 / 24;
 const MOBILE_BACKDROP_IDLE_MS = 1000 / 22;
 const MOBILE_LIGHT_IDLE_MS = 1000 / 26;
 const DESKTOP_TEXT_MEASURE_MS = 110;
+const DESKTOP_TEXT_MEASURE_IDLE_MS = 260;
+const DESKTOP_TEXT_DRAW_IDLE_MS = 1000 / 14;
+const DESKTOP_TEXT_DRAW_ACTIVE_MS = 1000 / 28;
+const DESKTOP_TEXT_VIS_SHADOW_IDLE_MS = 1000 / 12;
+const DESKTOP_TEXT_VIS_SHADOW_ACTIVE_MS = 1000 / 20;
 const SHADOW_LIGHTEN = 0.05;
 const SHADOW_WALL_MULTIPLY = 0.78 * (1 - SHADOW_LIGHTEN);
 const SHADOW_WALL_MULTIPLY_MOBILE = 0.64 * (1 - SHADOW_LIGHTEN);
@@ -126,6 +134,7 @@ let textVisHoverCanvas, textVisHoverCtx;
 let hoverTextCanvas, hoverTextCtx;
 let wallCanvas, wallCtx;
 let textCanvas, textCtx;
+let textGeometryCanvas, textGeometryCtx;
 let fxRawCanvas, fxRawCtx;
 let fxCanvas, fxCtx;
 let grainCanvas;
@@ -216,16 +225,16 @@ function updatePerfProfile() {
     dpr = Math.min(rawDpr, 1.35);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.45;
-    dpr = Math.min(rawDpr, 1.08);
+    renderScale = 0.36;
+    dpr = Math.min(rawDpr, 1);
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.54;
-    dpr = Math.min(rawDpr, 1.25);
+    renderScale = 0.46;
+    dpr = Math.min(rawDpr, 1.12);
   } else {
     perfTier = 1;
-    renderScale = 0.6;
-    dpr = Math.min(rawDpr, 1.5);
+    renderScale = 0.5;
+    dpr = Math.min(rawDpr, 1.28);
   }
 
   if (prefersReducedMotion) {
@@ -379,7 +388,7 @@ function initBlobs() {
 
   const lightCount = isMobile
     ? 4 + Math.floor(Math.random() * 2)
-    : Math.round((perfTier >= 3 ? 36 : perfTier >= 2 ? 42 : 46) * areaScale);
+    : Math.round((perfTier >= 3 ? 26 : perfTier >= 2 ? 32 : 36) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
     if (isMobile) radius *= MOBILE_DESKTOP_CROP_SCALE;
@@ -648,7 +657,7 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [14, 14, 12, 10];
+  const foliageByTier = [12, 10, 9, 8];
   const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
@@ -1082,6 +1091,8 @@ function layoutScatterItems() {
 
 function updateScatterMotion(time) {
   if (!scatterLayoutItems.length) return false;
+  const motionSkip = sceneIdle ? 3 : (recentlyMovedActive() ? 1 : 2);
+  if (renderFrame % motionSkip !== 0) return false;
 
   for (const item of scatterLayoutItems) {
     const x = Math.sin(time * item.speed + item.phase) * item.ampX;
@@ -1090,6 +1101,10 @@ function updateScatterMotion(time) {
   }
 
   return true;
+}
+
+function recentlyMovedActive() {
+  return performance.now() - lastPointerMove < 120;
 }
 
 function measureTextItems() {
@@ -1184,6 +1199,9 @@ function resize() {
   lastTextCanvasDrawAt = -1;
   lastTextVisLightBuildAt = -1;
   lastTextVisBuildAt = -1;
+  lastTextVisShadowAt = -1;
+  lastTextGeometryDrawAt = -1;
+  lastTextGeometryStamp = '';
   cachedHoverMaskTarget = null;
   lastHoverMaskBuildAt = -1;
 
@@ -1259,6 +1277,11 @@ function resize() {
   textCanvas = off4.canvas;
   textCtx = off4.ctx;
   textCtx.imageSmoothingEnabled = false;
+
+  const offTextGeometry = full();
+  textGeometryCanvas = offTextGeometry.canvas;
+  textGeometryCtx = offTextGeometry.ctx;
+  textGeometryCtx.imageSmoothingEnabled = false;
 
   const offFxRaw = buf();
   fxRawCanvas = offFxRaw.canvas;
@@ -2269,12 +2292,34 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
   targetCtx.restore();
 }
 
-function drawShadowLayer() {
+function shouldUpdateTextVisShadow(recentlyMoved = false) {
+  if (!needsScatterTextMask() || lastTextVisLightBuildAt < 0) return false;
+  if (lastTextVisLightBuildAt > lastTextVisShadowAt) return true;
+  if (lastShadowLayerAt > lastTextVisShadowAt) return true;
+  const interval = recentlyMoved
+    ? DESKTOP_TEXT_VIS_SHADOW_ACTIVE_MS
+    : DESKTOP_TEXT_VIS_SHADOW_IDLE_MS;
+  return lastRenderAt - lastTextVisShadowAt >= interval;
+}
+
+function applyScatterTextVisibilityShadowIfNeeded(recentlyMoved = false) {
+  if (!shouldUpdateTextVisShadow(recentlyMoved)) return false;
+  applyScatterTextVisibilityShadow();
+  lastTextVisShadowAt = lastRenderAt;
+  return true;
+}
+
+function drawShadowLayer(recentlyMoved = false) {
   const isMobile = width < MOBILE_BREAKPOINT;
   const shadowInterval = isMobile
     ? 0
-    : (perfTier >= 3 ? 1000 / 20 : perfTier >= 2 ? 1000 / 24 : DESKTOP_SHADOW_FRAME_MS);
-  if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < shadowInterval) return;
+    : (sceneIdle && perfTier >= 2
+      ? 1000 / 14
+      : (perfTier >= 3 ? 1000 / 20 : perfTier >= 2 ? 1000 / 24 : DESKTOP_SHADOW_FRAME_MS));
+  if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < shadowInterval) {
+    applyScatterTextVisibilityShadowIfNeeded(recentlyMoved);
+    return;
+  }
   lastShadowLayerAt = lastRenderAt;
 
   const w = canvas.width;
@@ -2296,9 +2341,7 @@ function drawShadowLayer() {
   applyOrganicShadowEdgeBlend(shadowRawCtx);
   endBufferDraw(shadowRawCtx);
   blurPass(shadowRawCanvas, shadowCtx, shadowCanvas, isMobile ? BLUR_SHADOW * 1.15 : BLUR_SHADOW * (perfTier >= 2 ? 0.92 : 1));
-  if (needsScatterTextMask() && lastTextVisLightBuildAt >= 0) {
-    applyScatterTextVisibilityShadow();
-  }
+  applyScatterTextVisibilityShadowIfNeeded(recentlyMoved);
 }
 
 function drawLightBokehLayer(time = lastRenderAt) {
@@ -2429,14 +2472,9 @@ function applyScatterTextVisibilityShadow() {
   cachedHoverMaskTarget = null;
 }
 
-function composeScatterTextVisibilityMask(isMobile = width < MOBILE_BREAKPOINT) {
+function drawScatterTextLightMask(isMobile = width < MOBILE_BREAKPOINT, skipMaskRaw = false) {
+  if (!skipMaskRaw) updateScatterTextMaskRaw();
   composeScatterTextVisibilityLight(isMobile);
-  applyScatterTextVisibilityShadow();
-}
-
-function drawScatterTextLightMask(isMobile = width < MOBILE_BREAKPOINT) {
-  updateScatterTextMaskRaw();
-  composeScatterTextVisibilityMask(isMobile);
 }
 
 function applyTextVisibilityMask(targetCtx) {
@@ -2515,12 +2553,19 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
   const isMobile = width < MOBILE_BREAKPOINT;
   const w = canvas.width;
   const h = canvas.height;
+  const scatterMask = needsScatterTextMask();
+  if (scatterMask) updateScatterTextMaskRaw();
+
   beginBufferDraw(lightRawCtx);
   lightRawCtx.clearRect(0, 0, w, h);
 
   lightRawCtx.globalCompositeOperation = 'lighter';
   drawAmbientLightFill(lightRawCtx);
-  drawLightBlobPass(lightRawCtx);
+  if (scatterMask) {
+    lightRawCtx.drawImage(textMaskRawCanvas, 0, 0, bufferW, bufferH);
+  } else {
+    drawLightBlobPass(lightRawCtx);
+  }
   if (hasRollItems) {
     drawRollFocusLights(lightRawCtx, 0.9);
     drawRollFocusShadows(lightRawCtx, 'mask');
@@ -2532,7 +2577,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
     ? `brightness(${0.98 + (1 - renderScale) * 0.06}) contrast(1.55)`
     : `brightness(${1.14 + (1 - renderScale) * 0.12}) contrast(3.8)`;
   blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.55 : BLUR_MASK, maskFilter);
-  drawScatterTextLightMask(isMobile);
+  if (scatterMask) drawScatterTextLightMask(isMobile, true);
   return true;
 }
 
@@ -2637,10 +2682,12 @@ function drawWall() {
 
   if (hasRollItems) drawRollFocusShadows(wallCtx, 'wall');
 
-  wallCtx.globalCompositeOperation = 'lighter';
-  wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.28);
-  wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
-  wallCtx.globalAlpha = 1;
+  if (perfTier < 2) {
+    wallCtx.globalCompositeOperation = 'lighter';
+    wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.28);
+    wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
+    wallCtx.globalAlpha = 1;
+  }
 
   wallCtx.globalCompositeOperation = 'source-over';
   drawEdgeWallGlow();
@@ -2839,23 +2886,74 @@ function drawSingleTextItem(item, hovered = false, targetCtx = textCtx) {
   targetCtx.restore();
 }
 
+function textLayoutStamp() {
+  if (!textItems.length) return '0';
+  return textItems.map((item) => (
+    `${Math.round(item.titleX)}:${Math.round(item.titleY)}:${Math.round(item.fontSize)}:${item.title}:${item.meta}`
+  )).join('|');
+}
+
+function textGeometryStamp() {
+  let stamp = textLayoutStamp();
+  if (hoveredTextEl) stamp += `|hover:${hoveredTextEl.textContent?.trim().slice(0, 24) ?? ''}`;
+  for (const item of textItems) {
+    if (item.sourceEl === hoveredTextEl) continue;
+    const scale = getTextHoverScale(item.sourceEl);
+    if (Math.abs(scale - 1) > 0.001) {
+      stamp += `|s:${scale.toFixed(3)}:${item.title.slice(0, 12)}`;
+    }
+  }
+  return stamp;
+}
+
+function rebuildTextGeometryIfNeeded(force = false) {
+  if (hasRollItems || !textGeometryCtx) return false;
+  const stamp = textGeometryStamp();
+  if (!force && stamp === lastTextGeometryStamp && lastTextGeometryDrawAt >= 0) return false;
+
+  lastTextGeometryStamp = stamp;
+  textGeometryCtx.clearRect(0, 0, textGeometryCanvas.width, textGeometryCanvas.height);
+
+  for (const item of textItems) {
+    if (item.sourceEl === hoveredTextEl) continue;
+    drawSingleTextItem(item, false, textGeometryCtx);
+
+    if (!item.meta) continue;
+    textGeometryCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
+    textGeometryCtx.fillStyle = TEXT_META;
+    textGeometryCtx.textAlign = 'left';
+    textGeometryCtx.fillText(item.meta, item.metaX, item.metaY);
+  }
+
+  lastTextGeometryDrawAt = lastRenderAt;
+  return true;
+}
+
 function drawMaskedText() {
   textCtx.clearRect(0, 0, canvas.width, canvas.height);
   updateTextHoverScales();
 
-  for (const item of textItems) {
-    if (item.sourceEl === hoveredTextEl) continue;
-    drawSingleTextItem(item, false);
+  if (hasRollItems) {
+    for (const item of textItems) {
+      if (item.sourceEl === hoveredTextEl) continue;
+      drawSingleTextItem(item, false);
 
-    if (!item.meta) continue;
-    textCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
-    textCtx.fillStyle = TEXT_META;
-    textCtx.textAlign = 'left';
-    textCtx.fillText(item.meta, item.metaX, item.metaY);
+      if (!item.meta) continue;
+      textCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
+      textCtx.fillStyle = TEXT_META;
+      textCtx.textAlign = 'left';
+      textCtx.fillText(item.meta, item.metaX, item.metaY);
+    }
+
+    drawMaskedRollLines();
+    applyTextVisibilityMask(textCtx);
+  } else {
+    rebuildTextGeometryIfNeeded();
+    if (textGeometryCanvas) {
+      textCtx.drawImage(textGeometryCanvas, 0, 0);
+    }
+    applyTextVisibilityMask(textCtx);
   }
-
-  drawMaskedRollLines();
-  applyTextVisibilityMask(textCtx);
 
   if (hoveredTextEl && hoverTextCtx) {
     const w = canvas.width;
@@ -2874,19 +2972,35 @@ function drawMaskedText() {
 }
 
 function shouldRedrawTextCanvas(recentlyMoved, dynamicTextChanged) {
+  if (hasRollItems) {
+    if (dynamicTextChanged) return true;
+    if (recentlyMoved) return true;
+    if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
+    if (hoveredTextEl !== lastPaintedHoveredTextEl) return true;
+    if (lastLightMapUpdateAt > lastTextCanvasDrawAt) return true;
+    if (lastShadowLayerAt > lastTextCanvasDrawAt) return true;
+    for (const item of textItems) {
+      if (Math.abs(getTextHoverScale(item.sourceEl) - 1) > 0.008) return true;
+    }
+    return lastTextCanvasDrawAt < 0;
+  }
+
   if (dynamicTextChanged) return true;
-  if (recentlyMoved) return true;
-  if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
   if (hoveredTextEl !== lastPaintedHoveredTextEl) return true;
-  if (hasRollItems) return true;
-  if (lastLightMapUpdateAt > lastTextCanvasDrawAt) return true;
-  if (lastShadowLayerAt > lastTextCanvasDrawAt) return true;
+  if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
+  if (lastTextVisBuildAt > lastTextCanvasDrawAt) return true;
 
   for (const item of textItems) {
     if (Math.abs(getTextHoverScale(item.sourceEl) - 1) > 0.008) return true;
   }
 
-  return lastTextCanvasDrawAt < 0;
+  if (lastTextCanvasDrawAt < 0) return true;
+  if (textGeometryStamp() !== lastTextGeometryStamp) return true;
+
+  const drawInterval = recentlyMoved ? DESKTOP_TEXT_DRAW_ACTIVE_MS : DESKTOP_TEXT_DRAW_IDLE_MS;
+  if (lastRenderAt - lastTextCanvasDrawAt < drawInterval) return false;
+
+  return false;
 }
 
 function drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged) {
@@ -3157,7 +3271,8 @@ function render(time) {
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   const dynamicTextChanged = updateScatterMotion(time) || hasRollItems;
-  if (dynamicTextChanged && time - lastDynamicTextMeasureAt > DESKTOP_TEXT_MEASURE_MS) {
+  const measureInterval = sceneIdle ? DESKTOP_TEXT_MEASURE_IDLE_MS : DESKTOP_TEXT_MEASURE_MS;
+  if (dynamicTextChanged && time - lastDynamicTextMeasureAt > measureInterval) {
     measureTextItems();
     lastDynamicTextMeasureAt = time;
   }
@@ -3173,7 +3288,7 @@ function render(time) {
   updateWind(time);
   updateCursorLight(time);
   updateBlobs(time);
-  drawShadowLayer();
+  drawShadowLayer(recentlyMoved);
   const lightUpdated = drawLightMap(time, recentlyMoved);
   if (perfTier >= 2) {
     if (lightUpdated || shouldSyncBokehFromLightMap(time)) {
