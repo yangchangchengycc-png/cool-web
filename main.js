@@ -2555,6 +2555,9 @@ function buildSolidHoverMask() {
   if (!needsScatterTextMask() || !textVisHoverCtx) return false;
   const maskSource = perfTier >= 2 ? textMaskCanvas : textMaskCoreCanvas;
   if (!maskSource) return false;
+
+  const w = textVisW;
+  const h = textVisH;
   textVisHoverCtx.clearRect(0, 0, w, h);
   textVisHoverCtx.filter = width < MOBILE_BREAKPOINT
     ? 'grayscale(1) brightness(0.38) contrast(72) saturate(0)'
