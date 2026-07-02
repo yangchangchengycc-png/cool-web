@@ -254,7 +254,27 @@ function updatePerfProfile() {
     textVisScale = Math.max(textVisScale, 0.72);
   }
 
-  lightBrightBoost = 1.08 + (1 - renderScale) * 0.34;
+  lightBrightBoost = 1.16 + (1 - renderScale) * 0.58 + (perfTier >= 2 ? 0.1 : 0);
+}
+
+function getLightMapBrightness() {
+  if (width < MOBILE_BREAKPOINT) return 0.98 + (1 - renderScale) * 0.06;
+  return 1.28 + (1 - renderScale) * 0.22;
+}
+
+function getBokehBrightness() {
+  if (width < MOBILE_BREAKPOINT) return 1.04;
+  return 1.32 + (1 - renderScale) * 0.38;
+}
+
+function getWallLightAlpha() {
+  if (width < MOBILE_BREAKPOINT) return 0.88;
+  return Math.min(0.98 + (1 - renderScale) * 0.14, 1);
+}
+
+function getWallLightLift() {
+  if (width < MOBILE_BREAKPOINT) return 1;
+  return Math.min(1.06 + (1 - renderScale) * 0.18, 1.28);
 }
 
 function syncTextVisSize() {
@@ -271,10 +291,9 @@ function endBufferDraw(targetCtx) {
 }
 
 function syncBokehFromLightMap() {
-  const isMobile = width < MOBILE_BREAKPOINT;
-  const bokehBright = isMobile ? 1.04 : 1.1 + (1 - renderScale) * 0.28;
+  const bokehBright = getBokehBrightness();
   lightBokehCtx.clearRect(0, 0, lightBokehCanvas.width, lightBokehCanvas.height);
-  lightBokehCtx.filter = `brightness(${bokehBright})`;
+  lightBokehCtx.filter = `brightness(${bokehBright}) contrast(1.04)`;
   lightBokehCtx.drawImage(lightCanvas, 0, 0, lightBokehCanvas.width, lightBokehCanvas.height);
   lightBokehCtx.filter = 'none';
 }
@@ -962,8 +981,8 @@ function drawAmbientLightFill(targetCtx) {
   const cy = h * 0.4;
   const rad = Math.max(w, h) * 0.82;
   const grad = targetCtx.createRadialGradient(cx, cy, rad * 0.08, cx, cy, rad);
-  grad.addColorStop(0, 'rgba(255,251,244,0.2)');
-  grad.addColorStop(0.45, 'rgba(255,249,238,0.11)');
+  grad.addColorStop(0, 'rgba(255,251,244,0.26)');
+  grad.addColorStop(0.45, 'rgba(255,249,238,0.14)');
   grad.addColorStop(1, 'rgba(255,255,255,0)');
   targetCtx.save();
   targetCtx.globalCompositeOperation = 'lighter';
@@ -2097,8 +2116,8 @@ function drawLightBlob(targetCtx, b, alphaScale = 1) {
   const ey = (b.ellipseY ?? 1) * (b.renderRy ?? 1);
   const round = b.ellipseRound ?? 0.65;
   const a = Math.min(
-    b.strength * alphaScale * lightBrightBoost * (isMobile ? 0.82 : 1),
-    isMobile ? 0.96 : 1.32
+    b.strength * alphaScale * lightBrightBoost * (isMobile ? 0.82 : 1.08),
+    isMobile ? 0.96 : 1.42
   );
   const { r, g, b: bv } = LIGHT;
 
@@ -2415,8 +2434,8 @@ function drawLightBokehLayer(time = lastRenderAt) {
   if (hasRollItems) drawRollFocusLights(lightBokehRawCtx, 0.55);
   lightBokehRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightBokehRawCtx);
-  const bokehBright = isMobile ? 1.04 : 1.1 + (1 - renderScale) * 0.28;
-  blurPass(lightBokehRawCanvas, lightBokehCtx, lightBokehCanvas, isMobile ? BLUR_LIGHT * 1.18 : BLUR_LIGHT, `brightness(${bokehBright})`);
+  const bokehBright = getBokehBrightness();
+  blurPass(lightBokehRawCanvas, lightBokehCtx, lightBokehCanvas, isMobile ? BLUR_LIGHT * 1.18 : BLUR_LIGHT, `brightness(${bokehBright}) contrast(1.04)`);
 }
 
 function shouldUpdateLightMap(time, recentlyMoved) {
@@ -2635,7 +2654,7 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
 
   const maskFilter = isMobile
     ? `brightness(${0.98 + (1 - renderScale) * 0.06}) contrast(1.55)`
-    : `brightness(${1.14 + (1 - renderScale) * 0.12}) contrast(3.8)`;
+    : `brightness(${getLightMapBrightness()}) contrast(3.6)`;
   blurPass(lightRawCanvas, lightCtx, lightCanvas, isMobile ? BLUR_MASK * 1.55 : BLUR_MASK, maskFilter);
   if (scatterMask) drawScatterTextLightMask(isMobile, true);
   return true;
@@ -2733,16 +2752,27 @@ function drawWall() {
 
   if (isMobile) drawMobileAmbientLightBlend();
 
+  wallCtx.save();
   wallCtx.globalCompositeOperation = 'screen';
-  wallCtx.globalAlpha = isMobile
-    ? 0.88
-    : Math.min((perfTier >= 3 ? 0.98 : 0.94) * lightBrightBoost, 1);
+  wallCtx.globalAlpha = getWallLightAlpha();
+  wallCtx.filter = width < MOBILE_BREAKPOINT ? 'none' : `brightness(${getWallLightLift()})`;
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
+  wallCtx.filter = 'none';
   wallCtx.globalAlpha = 1;
+  wallCtx.restore();
 
   if (hasRollItems) drawRollFocusShadows(wallCtx, 'wall');
 
-  if (perfTier < 2) {
+  if (perfTier >= 2) {
+    wallCtx.save();
+    wallCtx.globalCompositeOperation = 'lighter';
+    wallCtx.globalAlpha = Math.min(0.1 + (1 - renderScale) * 0.14, 0.22);
+    wallCtx.filter = `brightness(${getWallLightLift()})`;
+    wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
+    wallCtx.filter = 'none';
+    wallCtx.globalAlpha = 1;
+    wallCtx.restore();
+  } else {
     wallCtx.globalCompositeOperation = 'lighter';
     wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.28);
     wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
