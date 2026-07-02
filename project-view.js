@@ -57,6 +57,18 @@
     return match ? match[1] : '';
   }
 
+  function buildYouTubeEmbedUrl(id, autoplay = false) {
+    const params = new URLSearchParams({
+      rel: '0',
+      modestbranding: '1',
+      playsinline: '1',
+      enablejsapi: '1',
+      origin: window.location.origin,
+    });
+    if (autoplay) params.set('autoplay', '1');
+    return `https://www.youtube.com/embed/${id}?${params.toString()}`;
+  }
+
   function setActiveTab(mode) {
     els.tabs.forEach((tab) => {
       tab.classList.toggle('is-active', tab.dataset.mode === mode);
@@ -107,7 +119,6 @@
     els.stage?.classList.remove('is-playing');
     els.stageWrap?.classList.remove('is-playing');
     if (els.play) {
-      els.play.hidden = true;
       els.play.classList.remove('is-playing');
       els.play.setAttribute('aria-label', 'Play video');
     }
@@ -138,6 +149,7 @@
     }
     if (els.play) {
       els.play.hidden = !isVideo || videos.length === 0;
+      if (!els.play.hidden) els.play.removeAttribute('hidden');
     }
 
     els.stageWrap?.classList.toggle('is-video-mode', isVideo && videos.length > 0);
@@ -196,7 +208,9 @@
       iframe.title = item.alt || `${project.title} video`;
       iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
       iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
       iframe.dataset.youtubeId = youtubeId;
+      iframe.src = buildYouTubeEmbedUrl(youtubeId, false);
       els.stage.appendChild(iframe);
     } else if (item.src) {
       const video = document.createElement('video');
@@ -267,7 +281,7 @@
 
     if (iframe && !youtubePlaying) {
       const id = iframe.dataset.youtubeId;
-      iframe.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+      iframe.src = buildYouTubeEmbedUrl(id, true);
       youtubePlaying = true;
       els.stage.classList.add('is-playing');
       els.stageWrap?.classList.add('is-playing');
@@ -343,7 +357,17 @@
 
   els.prev?.addEventListener('click', () => stepPhoto(-1));
   els.next?.addEventListener('click', () => stepPhoto(1));
-  els.play?.addEventListener('click', playVideo);
+  els.play?.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    playVideo();
+  });
+
+  els.stageWrap?.addEventListener('click', (event) => {
+    if (currentMode !== 'video' || youtubePlaying) return;
+    if (event.target.closest('.project-play, .project-expand')) return;
+    playVideo();
+  });
   els.expand?.addEventListener('click', openLightbox);
   els.lightboxClose?.addEventListener('click', closeLightbox);
   els.lightboxPrev?.addEventListener('click', () => stepLightbox(-1));

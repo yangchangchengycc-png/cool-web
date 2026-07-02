@@ -539,6 +539,11 @@ body.layout-detail::before {
 .project-stage-wrap {
   position: relative;
   width: 100%;
+  pointer-events: auto;
+}
+
+.project-stage-wrap.is-video-mode:not(.is-playing) {
+  cursor: pointer;
 }
 
 .project-stage {
@@ -582,6 +587,7 @@ body.layout-detail::before {
   border: 0;
   opacity: 0;
   pointer-events: none;
+  z-index: 1;
 }
 
 .project-stage.is-video.is-playing .project-stage__youtube {
@@ -613,7 +619,8 @@ body.layout-detail::before {
   display: grid;
   place-items: center;
   padding-left: 0.15rem;
-  z-index: 2;
+  z-index: 10;
+  pointer-events: auto;
   transition: opacity 160ms ease;
 }
 
