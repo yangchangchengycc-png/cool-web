@@ -646,7 +646,12 @@ body.layout-detail::before {
   background: transparent;
   color: rgba(0, 0, 0, 0.72);
   cursor: pointer;
-  z-index: 2;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.project-stage-wrap.is-photo-mode .project-expand {
+  visibility: visible;
 }
 
 .project-nav[hidden],
@@ -734,7 +739,9 @@ body.layout-detail::before {
 }
 
 .project-rule--top::before,
-.project-rule--top .project-rule__dash {
+.project-rule--top .project-rule__dash,
+.project-rule--bottom::before,
+.project-rule--bottom .project-rule__dash {
   background: #000;
 }
 

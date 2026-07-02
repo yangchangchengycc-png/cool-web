@@ -145,7 +145,9 @@
       els.next.disabled = !isPhoto || photos.length <= 1;
     }
     if (els.expand) {
-      els.expand.classList.toggle('is-inert', !isPhoto || photos.length === 0);
+      const showExpand = isPhoto && photos.length > 0;
+      els.expand.classList.toggle('is-inert', !showExpand);
+      if (showExpand) els.expand.removeAttribute('hidden');
     }
     if (els.play) {
       els.play.hidden = !isVideo || videos.length === 0;
