@@ -350,6 +350,7 @@ body::before {
   line-height: 0;
   flex-shrink: 0;
   text-decoration: none;
+  pointer-events: auto;
 }
 
 .site-logo:focus-visible {
@@ -478,6 +479,253 @@ body::before {
 .layout-detail {
   min-height: 100vh;
   min-height: 100svh;
+  overflow-x: hidden;
+}
+
+body.layout-detail::before {
+  display: none;
+}
+
+.project-page {
+  position: relative;
+  z-index: 6;
+  min-height: 100vh;
+  min-height: 100svh;
+  pointer-events: none;
+}
+
+.project-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
+  gap: clamp(2rem, 4.5vw, 4.5rem);
+  align-items: start;
+  width: min(94vw, 112rem);
+  margin: 0 auto;
+  padding:
+    clamp(5.5rem, 11vh, 7.5rem)
+    clamp(1.5rem, 3.5vw, 3.5rem)
+    clamp(2rem, 5vh, 3rem);
+}
+
+.project-media-col,
+.project-info-col {
+  pointer-events: auto;
+}
+
+.project-viewer {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: 0.55rem;
+}
+
+.project-nav {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 1.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.82);
+  cursor: pointer;
+}
+
+.project-nav:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.project-stage-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.project-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.55 / 1;
+  border: 1px solid rgba(0, 0, 0, 0.88);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.project-stage.is-empty {
+  display: grid;
+  place-items: center;
+}
+
+.project-stage__empty {
+  font-size: 0.82rem;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.project-stage__media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding-left: 0.15rem;
+}
+
+.project-play.is-playing svg {
+  transform: scale(0.82);
+}
+
+.project-expand {
+  position: absolute;
+  right: 0.72rem;
+  bottom: 0.72rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+}
+
+.project-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.project-title-box,
+.project-tab {
+  min-height: 2.35rem;
+  border: 1px solid rgba(0, 0, 0, 0.88);
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: clamp(0.72rem, 0.95vw, 0.86rem);
+  line-height: 1.25;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.project-title-box {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  text-transform: lowercase;
+}
+
+.project-tab {
+  min-width: 5.5rem;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+}
+
+.project-tab + .project-tab {
+  border-left: 0;
+}
+
+.project-tab.is-active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.project-tab:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.project-info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.35rem;
+  min-height: 100%;
+  padding-top: clamp(1rem, 4vh, 3rem);
+}
+
+.project-rule {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.project-rule::before {
+  content: '';
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.project-rule__dash {
+  width: 2.35rem;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.88);
+}
+
+.project-rule--bottom .project-rule__dash {
+  order: 1;
+}
+
+.project-rule--bottom::before {
+  order: 2;
+}
+
+.project-statement {
+  font-size: clamp(0.78rem, 0.95vw, 0.92rem);
+  line-height: 1.65;
+  text-align: justify;
+  color: rgba(0, 0, 0, 0.78);
+}
+
+.project-label {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.22rem 0.62rem;
+  border: 1px solid rgba(0, 0, 0, 0.88);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.project-meta__list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.project-meta__list dt {
+  font-size: clamp(0.78rem, 0.92vw, 0.88rem);
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.project-meta__list dd {
+  margin: 0;
+  font-size: clamp(0.76rem, 0.88vw, 0.86rem);
+  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.52);
+}
+
+.project-contact-line {
+  font-size: clamp(0.78rem, 0.92vw, 0.88rem);
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.62);
+}
+
+.project-meta__label {
+  display: block;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.82);
 }
 
 .layout-work {
@@ -691,6 +939,30 @@ body::before {
   font-size: 0.86rem;
 }
 
+@media (max-width: 900px) {
+  .project-layout {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding-top: 5rem;
+  }
+
+  .project-info-col {
+    padding-top: 0;
+  }
+
+  .project-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .project-title-box {
+    grid-column: 1 / -1;
+  }
+
+  .project-tab + .project-tab {
+    border-left: 1px solid rgba(0, 0, 0, 0.88);
+  }
+}
+
 @media (max-width: 700px) {
   .minimal-header {
     padding: 1.25rem 1.25rem 0;
@@ -703,6 +975,15 @@ body::before {
   .detail-back {
     left: 1.25rem;
     top: 1.25rem;
+  }
+
+  .project-layout {
+    width: 100%;
+    padding-inline: 1.25rem;
+  }
+
+  .project-tab {
+    min-width: 0;
   }
 
   .minimal-nav a {

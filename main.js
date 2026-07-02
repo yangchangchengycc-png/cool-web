@@ -65,6 +65,7 @@ let cachedRollItemEls = [];
 let cachedRollViewport = null;
 let cachedWorkRollEls = [];
 let cachedRollLineGroups = [];
+let isDetailPage = document.body.classList.contains('layout-detail');
 
 const REFERENCE_LIGHT_RENDER_SCALE = 0.54;
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
@@ -430,7 +431,9 @@ function randomPerimeterNorm() {
 function initEdgeFeatherSpots() {
   edgeFeatherSpots = [];
   const large = width >= 1400;
-  const count = width < 768 ? 12 : (large ? (perfTier >= 3 ? 12 : 20) : 16);
+  const count = isDetailPage
+    ? 8
+    : width < 768 ? 12 : (large ? (perfTier >= 3 ? 12 : 20) : 16);
   for (let i = 0; i < count; i++) {
     const { nx, ny } = randomPerimeterNorm();
     edgeFeatherSpots.push({
@@ -442,8 +445,115 @@ function initEdgeFeatherSpots() {
   }
 }
 
+function initDetailBlobs() {
+  const isMobile = width < 768;
+  const heroProfile = { rMin: 190, rMax: 260, exMin: 0.88, exMax: 1.15, eyMin: 0.28, eyMax: 0.42, roundMin: 0.62, roundMax: 0.8 };
+  const heroRadius =
+    (heroProfile.rMin + Math.random() * (heroProfile.rMax - heroProfile.rMin)) *
+    LIGHT_SIZE_SCALE *
+    1.2 *
+    (isMobile ? MOBILE_DESKTOP_CROP_SCALE : 1.05);
+
+  blobs.push({
+    type: 'light',
+    heroLight: true,
+    anchorNormX: 0.28 + Math.random() * 0.34,
+    anchorNormY: 0.22 + Math.random() * 0.38,
+    wanderAmpX: 38 + Math.random() * 42,
+    wanderAmpY: 34 + Math.random() * 38,
+    wanderFreq: 0.028 + Math.random() * 0.022,
+    baseX: width * 0.42,
+    baseY: height * 0.38,
+    relX: width * (0.42 - 0.5),
+    relY: height * (0.38 - 0.5),
+    radius: heroRadius,
+    ellipseX: heroProfile.exMin + Math.random() * (heroProfile.exMax - heroProfile.exMin),
+    ellipseY: heroProfile.eyMin + Math.random() * (heroProfile.eyMax - heroProfile.eyMin),
+    ellipseRound: heroProfile.roundMin + Math.random() * (heroProfile.roundMax - heroProfile.roundMin),
+    tiltVariation: (Math.random() - 0.5) * 0.18,
+    rx: 0.94 + Math.random() * 0.16,
+    ry: 0.94 + Math.random() * 0.16,
+    strength: 0.96 + Math.random() * 0.18,
+    swayFreq: 0.08 + Math.random() * 0.08,
+    swayAmp: 8 + Math.random() * 14,
+    flutterFreq: 0.55 + Math.random() * 0.8,
+    flutterAmp: 2 + Math.random() * 6,
+    sizeFreq: 0.1 + Math.random() * 0.14,
+    sizeAmp: 0.08 + Math.random() * 0.1,
+    phase: Math.random() * Math.PI * 2,
+    phase2: Math.random() * Math.PI * 2,
+    parallax: 0.16 + Math.random() * 0.12,
+    renderX: 0,
+    renderY: 0,
+    renderRx: 1,
+    renderRy: 1,
+    renderRadius: heroRadius,
+    gapToCursor: {
+      sizeScale: 0.52 + Math.random() * 0.62,
+      depth: 0.42 + Math.random() * 0.36,
+      colorVariant: Math.random(),
+      bias: (Math.random() - 0.5) * 0.32,
+      aspect: 0.48 + Math.random() * 0.52,
+    },
+  });
+
+  const smallCount = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < smallCount; i++) {
+    const radius = (34 + Math.random() * 52) * LIGHT_SIZE_SCALE * (isMobile ? MOBILE_DESKTOP_CROP_SCALE : 1);
+    const shape = pickLightEllipse();
+    const anchorNormX = 0.12 + Math.random() * 0.76;
+    const anchorNormY = 0.14 + Math.random() * 0.72;
+    blobs.push({
+      type: 'light',
+      anchorNormX,
+      anchorNormY,
+      wanderAmpX: 18 + Math.random() * 28,
+      wanderAmpY: 16 + Math.random() * 24,
+      wanderFreq: 0.04 + Math.random() * 0.03,
+      baseX: width * anchorNormX,
+      baseY: height * anchorNormY,
+      relX: width * (anchorNormX - 0.5),
+      relY: height * (anchorNormY - 0.5),
+      radius,
+      ellipseX: shape.ellipseX,
+      ellipseY: shape.ellipseY,
+      ellipseRound: shape.ellipseRound,
+      tiltVariation: (Math.random() - 0.5) * 0.16,
+      rx: 0.9 + Math.random() * 0.18,
+      ry: 0.9 + Math.random() * 0.18,
+      strength: 0.28 + Math.random() * 0.22,
+      swayFreq: 0.1 + Math.random() * 0.12,
+      swayAmp: 5 + Math.random() * 10,
+      flutterFreq: 0.7 + Math.random() * 1.1,
+      flutterAmp: 1.5 + Math.random() * 5,
+      sizeFreq: 0.14 + Math.random() * 0.18,
+      sizeAmp: 0.08 + Math.random() * 0.12,
+      phase: Math.random() * Math.PI * 2,
+      phase2: Math.random() * Math.PI * 2,
+      parallax: 0.12 + Math.random() * 0.28,
+      renderX: 0,
+      renderY: 0,
+      renderRx: 1,
+      renderRy: 1,
+      renderRadius: radius,
+      gapToCursor: {
+        sizeScale: 0.42 + Math.random() * 0.55,
+        depth: 0.36 + Math.random() * 0.32,
+        colorVariant: Math.random(),
+        bias: (Math.random() - 0.5) * 0.28,
+        aspect: 0.45 + Math.random() * 0.48,
+      },
+    });
+  }
+}
+
 function initBlobs() {
   blobs = [];
+  if (isDetailPage) {
+    initDetailBlobs();
+    refreshLightBlobs();
+    return;
+  }
   const isMobile = width < 768;
   const isPortrait = height > width;
   const largeScreen = width >= 1400;
@@ -722,8 +832,8 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [10, 8, 7, 6];
-  const foliageCount = foliageByTier[perfTier] ?? 28;
+  const foliageByTier = isDetailPage ? [6, 6, 5, 5] : [10, 8, 7, 6];
+  const foliageCount = foliageByTier[perfTier] ?? (isDetailPage ? 6 : 28);
 
   for (let i = 0; i < foliageCount; i++) {
     const scale = isMobile ? 0.42 + Math.random() * 0.42 : 0.65 + Math.random() * 1.05;
@@ -3426,11 +3536,15 @@ function render(time) {
   drawLightMap(time, recentlyMoved);
   drawLightBokehLayer(time, recentlyMoved);
   drawWallIfNeeded();
-  drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
+  if (!isDetailPage) {
+    drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
+  }
 
   ctx.drawImage(wallCanvas, 0, 0);
-  ctx.drawImage(textCanvas, 0, 0);
-  if (perfTier < 2) drawTyndallEffect(time);
+  if (!isDetailPage) {
+    ctx.drawImage(textCanvas, 0, 0);
+  }
+  if (perfTier < 2 && !isDetailPage) drawTyndallEffect(time);
   lastCompositedAt = time;
 
   requestAnimationFrame(render);

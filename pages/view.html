@@ -3,76 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portfolio — Detail</title>
-  <link rel="stylesheet" href="../styles.css?v=20260620-2100">
+  <title>Portfolio — Project</title>
+  <link rel="stylesheet" href="../styles.css?v=20260620-2200">
 </head>
 <body class="layout-detail">
-  <a class="detail-back" href="../index.html">← work</a>
+  <canvas id="scene" aria-hidden="true"></canvas>
+
   <header class="minimal-header">
+    <a href="../index.html" class="site-logo" aria-label="L/C. STUDIO">
+      <canvas class="site-logo__canvas" id="site-logo-canvas" width="266" height="322" role="img" aria-label="L/C. STUDIO"></canvas>
+    </a>
     <nav class="minimal-nav" aria-label="Primary navigation">
       <a href="work.html">work</a>
-      <a href="#exhibition">exhibition</a>
-      <a href="#contact">contact</a>
+      <a href="view.html#exhibition">exhibition</a>
+      <a href="view.html#contact">contact</a>
     </nav>
   </header>
 
-  <main class="detail-main">
-    <article class="detail-content">
-      <h1 class="detail-title" id="detail-title">precarious force</h1>
-      <p class="detail-meta" id="detail-meta">A project page placeholder. Replace this area with images, writing, credits, process, or documentation when the final content is ready.</p>
-    </article>
+  <main class="project-page" aria-label="Project detail">
+    <div class="project-layout">
+      <section class="project-media-col" id="project-viewer">
+        <div class="project-viewer">
+          <button type="button" class="project-nav project-nav--prev" id="project-nav-prev" aria-label="Previous media">
+            <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L7 1L13 9" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+          </button>
+
+          <div class="project-stage-wrap">
+            <div class="project-stage" id="project-stage"></div>
+            <button type="button" class="project-play" id="project-play" aria-label="Play video" hidden>
+              <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1L16 11L2 21V1Z" fill="currentColor"/></svg>
+            </button>
+            <button type="button" class="project-expand" id="project-expand" aria-label="Expand media" hidden>
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+          </div>
+
+          <button type="button" class="project-nav project-nav--next" id="project-nav-next" aria-label="Next media">
+            <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 1L7 9L13 1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+          </button>
+        </div>
+
+        <div class="project-controls">
+          <div class="project-title-box" id="project-title-box"></div>
+          <button type="button" class="project-tab" data-mode="video">Video</button>
+          <button type="button" class="project-tab" data-mode="photo">Photo</button>
+        </div>
+      </section>
+
+      <aside class="project-info-col" id="project-info">
+        <div class="project-rule project-rule--top" aria-hidden="true">
+          <span class="project-rule__dash"></span>
+        </div>
+
+        <p class="project-statement" id="project-statement"></p>
+
+        <div class="project-rule project-rule--bottom" aria-hidden="true">
+          <span class="project-rule__dash"></span>
+        </div>
+
+        <div class="project-label">Statement</div>
+
+        <div class="project-meta" id="project-meta"></div>
+      </aside>
+    </div>
   </main>
 
-  <script>
-    const pages = {
-      'precarious-force': {
-        title: 'precarious force',
-        meta: 'Project page placeholder for precarious force.'
-      },
-      'above-the-water': {
-        title: 'above the water',
-        meta: 'Project page placeholder for above the water.'
-      },
-      exhibition: {
-        title: 'exhibition',
-        meta: 'Exhibition information and documentation can be placed here.'
-      },
-      nector: {
-        title: 'nector',
-        meta: 'Project page placeholder for nector.'
-      },
-      branding: {
-        title: 'branding',
-        meta: 'Branding work, identity systems, and related case studies can be placed here.'
-      },
-      river: {
-        title: 'you can’t step into the same river twice',
-        meta: 'Project page placeholder for you can’t step into the same river twice.'
-      },
-      'trees-in-the-plastic-boxes': {
-        title: 'trees in the plastic boxes',
-        meta: 'Project page placeholder for trees in the plastic boxes.'
-      },
-      question: {
-        title: '<− ? −>',
-        meta: 'An open index page for experiments, notes, or uncategorized work.'
-      },
-      contact: {
-        title: 'contact',
-        meta: 'hello@example.com'
-      }
-    };
-
-    function renderDetail() {
-      const key = window.location.hash.replace('#', '') || 'precarious-force';
-      const page = pages[key] || pages['precarious-force'];
-      document.title = `Portfolio — ${page.title}`;
-      document.getElementById('detail-title').textContent = page.title;
-      document.getElementById('detail-meta').textContent = page.meta;
-    }
-
-    window.addEventListener('hashchange', renderDetail);
-    renderDetail();
-  </script>
+  <script src="../projects.js?v=20260620-2200" defer></script>
+  <script src="../logo.js?v=20260702-1900" defer></script>
+  <script src="../main.js?v=20260620-2200" defer></script>
+  <script src="../project-view.js?v=20260620-2200" defer></script>
 </body>
 </html>
