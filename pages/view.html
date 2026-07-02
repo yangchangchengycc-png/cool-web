@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Portfolio — Project</title>
-  <link rel="stylesheet" href="../styles.css?v=20260620-3600">
+  <link rel="stylesheet" href="../styles.css?v=20260620-3700">
 </head>
 <body class="layout-detail">
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -18,60 +18,58 @@
     </a>
     <nav class="minimal-nav" aria-label="Primary navigation">
       <a href="work.html">work</a>
-      <a href="view.html?v=20260620-3000#exhibition">exhibition</a>
-      <a href="view.html?v=20260620-3000#contact">contact</a>
+      <a href="view.html?v=20260620-3700#exhibition">exhibition</a>
+      <a href="view.html?v=20260620-3700#contact">contact</a>
     </nav>
   </header>
 
   <main class="project-page" aria-label="Project detail">
-    <div class="project-layout">
-      <section class="project-media-col" id="project-viewer">
-        <div class="project-col-inner project-col-inner--media">
-        <div class="project-viewer">
-          <button type="button" class="project-nav project-nav--prev" id="project-nav-prev" aria-label="Previous image">
-            <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L7 1L13 9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-          </button>
-
-          <div class="project-stage-wrap">
-            <div class="project-stage" id="project-stage"></div>
-            <button type="button" class="project-play" id="project-play" aria-label="Play video" hidden>
-              <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1L16 11L2 21V1Z" fill="currentColor"/></svg>
+    <div class="project-layout-shell">
+      <div class="project-layout">
+        <section class="project-media-col" id="project-viewer">
+          <div class="project-viewer">
+            <button type="button" class="project-nav project-nav--prev" id="project-nav-prev" aria-label="Previous image">
+              <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L7 1L13 9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
             </button>
-            <button type="button" class="project-expand" id="project-expand" aria-label="Open fullscreen image">
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+
+            <div class="project-stage-wrap">
+              <div class="project-stage" id="project-stage"></div>
+              <button type="button" class="project-play" id="project-play" aria-label="Play video" hidden>
+                <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1L16 11L2 21V1Z" fill="currentColor"/></svg>
+              </button>
+              <button type="button" class="project-expand" id="project-expand" aria-label="Open fullscreen image">
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              </button>
+            </div>
+
+            <button type="button" class="project-nav project-nav--next" id="project-nav-next" aria-label="Next image">
+              <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 1L7 9L13 1" fill="none" stroke="currentColor" stroke-width="2"/></svg>
             </button>
           </div>
 
-          <button type="button" class="project-nav project-nav--next" id="project-nav-next" aria-label="Next image">
-            <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 1L7 9L13 1" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-          </button>
-        </div>
+          <div class="project-controls">
+            <div class="project-title-box" id="project-title-box"></div>
+            <button type="button" class="project-tab" data-mode="video">Video</button>
+            <button type="button" class="project-tab" data-mode="photo">Photo</button>
+          </div>
+        </section>
 
-        <div class="project-controls">
-          <div class="project-title-box" id="project-title-box"></div>
-          <button type="button" class="project-tab" data-mode="video">Video</button>
-          <button type="button" class="project-tab" data-mode="photo">Photo</button>
-        </div>
-        </div>
-      </section>
+        <aside class="project-info-col" id="project-info">
+          <div class="project-rule project-rule--top" aria-hidden="true">
+            <span class="project-rule__dash"></span>
+          </div>
 
-      <aside class="project-info-col" id="project-info">
-        <div class="project-col-inner project-col-inner--info">
-        <div class="project-rule project-rule--top" aria-hidden="true">
-          <span class="project-rule__dash"></span>
-        </div>
+          <p class="project-statement" id="project-statement"></p>
 
-        <p class="project-statement" id="project-statement"></p>
+          <div class="project-rule project-rule--bottom" aria-hidden="true">
+            <span class="project-rule__dash"></span>
+          </div>
 
-        <div class="project-rule project-rule--bottom" aria-hidden="true">
-          <span class="project-rule__dash"></span>
-        </div>
+          <div class="project-label">Statement</div>
 
-        <div class="project-label">Statement</div>
-
-        <div class="project-meta" id="project-meta"></div>
-        </div>
-      </aside>
+          <div class="project-meta" id="project-meta"></div>
+        </aside>
+      </div>
     </div>
   </main>
 

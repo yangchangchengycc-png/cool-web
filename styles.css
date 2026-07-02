@@ -486,13 +486,6 @@ body::before {
   --project-nav-height: 1.35rem;
   --project-viewer-gap: 0.55rem;
   --project-stage-top: calc(var(--project-nav-height) + var(--project-viewer-gap));
-  --project-layout-offset-x: calc((0.58 - 1.42) / 2 * 10%);
-  --project-layout-offset-y: 20px;
-}
-
-.layout-detail .minimal-nav {
-  transform: scale(var(--project-ui-scale));
-  transform-origin: top right;
 }
 
 body.layout-detail::before {
@@ -510,9 +503,14 @@ body.layout-detail::before {
   min-height: 100svh;
   padding:
     clamp(4.5rem, 10vh, 6rem)
-    clamp(1.5rem, 3.5vw, 3.5rem)
-    clamp(4.5rem, 10vh, 6rem);
+    clamp(1.5rem, 3.5vw, 3.5rem);
   pointer-events: none;
+}
+
+.project-layout-shell {
+  zoom: var(--project-ui-scale);
+  width: min(calc(94vw / var(--project-ui-scale)), calc(112rem / var(--project-ui-scale)));
+  pointer-events: auto;
 }
 
 .project-layout {
@@ -520,13 +518,9 @@ body.layout-detail::before {
   grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
   gap: clamp(2rem, 4.5vw, 4.5rem);
   align-items: start;
-  position: relative;
-  left: var(--project-layout-offset-x);
-  top: var(--project-layout-offset-y);
-  width: min(94vw, 112rem);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 0;
-  pointer-events: auto;
 }
 
 .project-media-col,
@@ -534,22 +528,12 @@ body.layout-detail::before {
   pointer-events: auto;
 }
 
-.project-media-col {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.project-col-inner {
-  width: 100%;
-  zoom: var(--project-ui-scale);
-  pointer-events: auto;
-}
-
-.project-col-inner--info {
+.project-info-col {
   display: flex;
   flex-direction: column;
   gap: 1.35rem;
   padding-top: var(--project-stage-top);
+  align-self: start;
 }
 
 .project-viewer {
@@ -751,12 +735,6 @@ body.layout-detail::before {
 .project-tab:disabled {
   opacity: 1;
   cursor: pointer;
-}
-
-.project-info-col {
-  display: flex;
-  justify-content: flex-start;
-  align-self: start;
 }
 
 .project-rule {
@@ -1116,22 +1094,16 @@ body.project-lightbox-open {
 }
 
 @media (max-width: 900px) {
+  .project-layout-shell {
+    width: min(calc(100% / var(--project-ui-scale)), calc(94vw / var(--project-ui-scale)));
+  }
+
   .project-layout {
     grid-template-columns: 1fr;
     gap: 2.5rem;
-    left: 0;
-    top: var(--project-layout-offset-y);
-  }
-
-  .project-media-col {
-    justify-content: flex-start;
   }
 
   .project-info-col {
-    padding-top: 0;
-  }
-
-  .project-col-inner--info {
     padding-top: 0;
   }
 
