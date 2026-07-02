@@ -520,10 +520,13 @@ body.layout-detail::before {
   grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
   gap: clamp(2rem, 4.5vw, 4.5rem);
   align-items: start;
+  position: relative;
+  left: var(--project-layout-offset-x);
+  top: var(--project-layout-offset-y);
   width: min(94vw, 112rem);
   margin: 0 auto;
   padding: 0;
-  transform: translate(var(--project-layout-offset-x), var(--project-layout-offset-y));
+  pointer-events: auto;
 }
 
 .project-media-col,
@@ -537,13 +540,9 @@ body.layout-detail::before {
 }
 
 .project-col-inner {
-  width: calc(100% / var(--project-ui-scale));
-  transform: scale(var(--project-ui-scale));
+  width: 100%;
+  zoom: var(--project-ui-scale);
   pointer-events: auto;
-}
-
-.project-col-inner--media {
-  transform-origin: top right;
 }
 
 .project-col-inner--info {
@@ -551,7 +550,6 @@ body.layout-detail::before {
   flex-direction: column;
   gap: 1.35rem;
   padding-top: var(--project-stage-top);
-  transform-origin: top left;
 }
 
 .project-viewer {
@@ -1121,15 +1119,12 @@ body.project-lightbox-open {
   .project-layout {
     grid-template-columns: 1fr;
     gap: 2.5rem;
-    transform: translateY(var(--project-layout-offset-y));
+    left: 0;
+    top: var(--project-layout-offset-y);
   }
 
   .project-media-col {
     justify-content: flex-start;
-  }
-
-  .project-col-inner--media {
-    transform-origin: top left;
   }
 
   .project-info-col {

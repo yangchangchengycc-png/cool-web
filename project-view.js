@@ -62,11 +62,9 @@
       rel: '0',
       modestbranding: '1',
       playsinline: '1',
-      enablejsapi: '1',
-      origin: window.location.origin,
     });
     if (autoplay) params.set('autoplay', '1');
-    return `https://www.youtube.com/embed/${id}?${params.toString()}`;
+    return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
   }
 
   function setActiveTab(mode) {
@@ -116,6 +114,8 @@
 
   function stopYouTube() {
     youtubePlaying = false;
+    const iframe = els.stage?.querySelector('.project-stage__youtube');
+    if (iframe) iframe.removeAttribute('src');
     els.stage?.classList.remove('is-playing');
     els.stageWrap?.classList.remove('is-playing');
     if (els.play) {
@@ -208,11 +208,13 @@
       const iframe = document.createElement('iframe');
       iframe.className = 'project-stage__youtube';
       iframe.title = item.alt || `${project.title} video`;
-      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+      iframe.setAttribute(
+        'allow',
+        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+      );
       iframe.setAttribute('allowfullscreen', '');
       iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
       iframe.dataset.youtubeId = youtubeId;
-      iframe.src = buildYouTubeEmbedUrl(youtubeId, false);
       els.stage.appendChild(iframe);
     } else if (item.src) {
       const video = document.createElement('video');
@@ -283,6 +285,7 @@
 
     if (iframe && !youtubePlaying) {
       const id = iframe.dataset.youtubeId;
+      if (!id) return;
       iframe.src = buildYouTubeEmbedUrl(id, true);
       youtubePlaying = true;
       els.stage.classList.add('is-playing');
