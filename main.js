@@ -51,17 +51,17 @@ let cachedWorkRollEls = [];
 let cachedRollLineGroups = [];
 
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
+const DESKTOP_TARGET_FRAME_MS = 1000 / 60;
 const DESKTOP_CLUSTER_FRAME_MS = 1000 / 30;
 const DESKTOP_CLUSTER_IDLE_FRAME_MS = 1000 / 12;
 const DESKTOP_SHADOW_FRAME_MS = 1000 / 30;
-const DESKTOP_SHADOW_IDLE_FRAME_MS = 1000 / 18;
 const DESKTOP_BOKEH_FRAME_MS = 1000 / 24;
 const DESKTOP_BOKEH_IDLE_FRAME_MS = 1000 / 16;
 const DESKTOP_LIGHT_FRAME_MS = 1000 / 26;
 const DESKTOP_IDLE_LIGHT_FRAME_MS = 1000 / 18;
 const DESKTOP_FX_FRAME_MS = 1000 / 24;
 const DESKTOP_TEXT_MEASURE_MS = 110;
-const SHADOW_LIGHTEN = 0.1;
+const SHADOW_LIGHTEN = 0.05;
 const SHADOW_WALL_MULTIPLY = 0.78 * (1 - SHADOW_LIGHTEN);
 const SHADOW_WALL_MULTIPLY_MOBILE = 0.64 * (1 - SHADOW_LIGHTEN);
 
@@ -198,12 +198,12 @@ function updatePerfProfile() {
     dpr = Math.min(rawDpr, 1.5);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.46;
-    dpr = Math.min(rawDpr, 1.2);
+    renderScale = 0.5;
+    dpr = Math.min(rawDpr, 1.15);
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.52;
-    dpr = Math.min(rawDpr, 1.35);
+    renderScale = 0.54;
+    dpr = Math.min(rawDpr, 1.25);
   } else {
     perfTier = 1;
     renderScale = 0.6;
@@ -590,7 +590,7 @@ function initGapPatches() {
 
   const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 28 : perfTier >= 3 ? 36 : perfTier >= 2 ? 52 : 72;
+  const maxGapPatches = isMobile ? 24 : perfTier >= 3 ? 28 : perfTier >= 2 ? 40 : 58;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -619,7 +619,7 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [18, 18, 15, 13];
+  const foliageByTier = [16, 16, 13, 11];
   const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
@@ -853,30 +853,23 @@ function drawDust(time) {
 }
 
 function drawTyndallEffect(time) {
-  if (perfTier >= 3) return;
+  if (perfTier >= 2) return;
 
-  const skipFx = perfTier >= 2 && time - lastFxOverlayAt < DESKTOP_FX_FRAME_MS;
-  if (!skipFx && perfTier < 2) {
+  const skipFx = time - lastFxOverlayAt < DESKTOP_FX_FRAME_MS;
+  if (!skipFx) {
     if (renderFrame % 3 === 0) drawGodRays(time);
-    updateDust(time);
-    lastFxOverlayAt = time;
-  } else if (!skipFx && sceneIdle) {
-    lastFxOverlayAt = time;
-  } else if (!skipFx) {
     updateDust(time);
     lastFxOverlayAt = time;
   }
 
   ctx.globalCompositeOperation = 'screen';
-  ctx.globalAlpha = perfTier >= 2 ? 0.58 : 0.5;
+  ctx.globalAlpha = 0.5;
   ctx.drawImage(fxCanvas, 0, 0, canvas.width, canvas.height);
-  if (perfTier < 2) {
-    ctx.globalAlpha = 0.16;
-    ctx.drawImage(fxCanvas, 0, 0, canvas.width, canvas.height);
-  }
+  ctx.globalAlpha = 0.16;
+  ctx.drawImage(fxCanvas, 0, 0, canvas.width, canvas.height);
   ctx.globalAlpha = 1;
 
-  if (!skipFx && perfTier < 2 && !sceneIdle) {
+  if (!skipFx && !sceneIdle) {
     ctx.globalCompositeOperation = 'lighter';
     drawDust(time);
   }
@@ -1175,7 +1168,7 @@ function resize() {
   lightRawCanvas = offRaw2.canvas;
   lightRawCtx = offRaw2.ctx;
 
-  const off2 = full();
+  const off2 = width < MOBILE_BREAKPOINT ? full() : buf();
   lightCanvas = off2.canvas;
   lightCtx = off2.ctx;
 
@@ -1242,9 +1235,9 @@ function getShadowColor(b) {
   };
 
   return {
-    r: Math.round(Math.min(240, Math.max(171, base.r + hue.r * hueMix))),
-    g: Math.round(Math.min(238, Math.max(167, base.g + hue.g * hueMix))),
-    b: Math.round(Math.min(234, Math.max(161, base.b + hue.b * hueMix))),
+    r: Math.round(Math.min(240, Math.max(168, base.r + hue.r * hueMix))),
+    g: Math.round(Math.min(238, Math.max(164, base.g + hue.g * hueMix))),
+    b: Math.round(Math.min(234, Math.max(158, base.b + hue.b * hueMix))),
   };
 }
 
@@ -1273,9 +1266,9 @@ function getGapShadowColor(patch) {
   };
 
   return {
-    r: Math.round(Math.min(142, Math.max(112, base.r + hue.r * hueMix))),
-    g: Math.round(Math.min(140, Math.max(108, base.g + hue.g * hueMix))),
-    b: Math.round(Math.min(136, Math.max(102, base.b + hue.b * hueMix))),
+    r: Math.round(Math.min(142, Math.max(110, base.r + hue.r * hueMix))),
+    g: Math.round(Math.min(140, Math.max(106, base.g + hue.g * hueMix))),
+    b: Math.round(Math.min(136, Math.max(100, base.b + hue.b * hueMix))),
   };
 }
 
@@ -1313,7 +1306,8 @@ function drawGapPatch(targetCtx, blobA, blobB, patch) {
 
 function updateWind(time) {
   if (prefersReducedMotion) return;
-  if (sceneIdle && renderFrame % 3 !== 0) return;
+  const idleSkip = perfTier >= 2 ? 4 : 3;
+  if (sceneIdle && renderFrame % idleSkip !== 0) return;
 
   const t = time * 0.001;
   const idle = !pointerOnScreen;
@@ -1637,7 +1631,7 @@ function drawClusterGlows(targetCtx) {
 }
 
 function updateBlobs(time) {
-  if (sceneIdle && renderFrame % 2 !== 0) return;
+  if (sceneIdle && perfTier >= 2 && renderFrame % 2 !== 0) return;
 
   const t = time * 0.001;
   const idle = !pointerOnScreen;
@@ -1939,7 +1933,11 @@ function drawEdgeWallGlow() {
 function drawShadowAmbientWashes(targetCtx) {
   const w = canvas.width;
   const h = canvas.height;
-  const washes = [
+  const washes = perfTier >= 2 ? [
+    { x: 0.16, y: 0.22, r: 0.44, rgb: [SHADOW_LIGHTEN_CHANNEL(186), SHADOW_LIGHTEN_CHANNEL(178), SHADOW_LIGHTEN_CHANNEL(168)], a: 0.198 },
+    { x: 0.42, y: 0.68, r: 0.46, rgb: [SHADOW_LIGHTEN_CHANNEL(176), SHADOW_LIGHTEN_CHANNEL(184), SHADOW_LIGHTEN_CHANNEL(172)], a: 0.171 },
+    { x: 0.82, y: 0.74, r: 0.36, rgb: [SHADOW_LIGHTEN_CHANNEL(188), SHADOW_LIGHTEN_CHANNEL(178), SHADOW_LIGHTEN_CHANNEL(170)], a: 0.18 },
+  ] : [
     { x: 0.16, y: 0.22, r: 0.44, rgb: [SHADOW_LIGHTEN_CHANNEL(186), SHADOW_LIGHTEN_CHANNEL(178), SHADOW_LIGHTEN_CHANNEL(168)], a: 0.198 },
     { x: 0.68, y: 0.32, r: 0.4, rgb: [SHADOW_LIGHTEN_CHANNEL(174), SHADOW_LIGHTEN_CHANNEL(180), SHADOW_LIGHTEN_CHANNEL(188)], a: 0.18 },
     { x: 0.42, y: 0.68, r: 0.46, rgb: [SHADOW_LIGHTEN_CHANNEL(176), SHADOW_LIGHTEN_CHANNEL(184), SHADOW_LIGHTEN_CHANNEL(172)], a: 0.171 },
@@ -1963,23 +1961,10 @@ function drawShadowAmbientWashes(targetCtx) {
 }
 
 function drawGapShadowBoost(targetCtx) {
-  if (width < MOBILE_BREAKPOINT || sceneIdle) return;
+  if (width < MOBILE_BREAKPOINT) return;
 
   for (const patch of gapPatches) {
     drawGapPatch(targetCtx, patch.lightA, patch.lightB, patch);
-  }
-
-  if (pointerOnScreen) {
-    const cursor = getCursorLightBlob();
-    const maxDist = 340 * dpr;
-    const minDist = 18 * dpr;
-    for (const light of getLightBlobs()) {
-      const dx = light.renderX - cursor.renderX;
-      const dy = light.renderY - cursor.renderY;
-      const dist = Math.hypot(dx, dy);
-      if (dist > maxDist || dist < minDist) continue;
-      drawGapPatch(targetCtx, light, cursor, light.gapToCursor);
-    }
   }
 }
 
@@ -2087,7 +2072,7 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
   const dw = destCanvas.width;
   const dh = destCanvas.height;
   destCtx.clearRect(0, 0, dw, dh);
-  const tierBlurScale = perfTier >= 3 ? 0.86 : perfTier >= 2 ? 0.92 : 1;
+  const tierBlurScale = perfTier >= 3 ? 0.82 : perfTier >= 2 ? 0.9 : 1;
   const blurPx = amount * renderScale * tierBlurScale;
   destCtx.filter = extraFilter ? `blur(${blurPx}px) ${extraFilter}` : `blur(${blurPx}px)`;
   destCtx.drawImage(source, 0, 0, dw, dh);
@@ -2207,7 +2192,9 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
 
 function drawShadowLayer() {
   const isMobile = width < MOBILE_BREAKPOINT;
-  const shadowInterval = isMobile ? 0 : (sceneIdle ? DESKTOP_SHADOW_IDLE_FRAME_MS : DESKTOP_SHADOW_FRAME_MS);
+  const shadowInterval = isMobile
+    ? 0
+    : (perfTier >= 3 ? 1000 / 24 : perfTier >= 2 ? 1000 / 26 : DESKTOP_SHADOW_FRAME_MS);
   if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < shadowInterval) return;
   lastShadowLayerAt = lastRenderAt;
 
@@ -2220,7 +2207,7 @@ function drawShadowLayer() {
   drawGapShadowBoost(shadowRawCtx);
 
   for (const f of foliage) {
-    drawShadowShape(shadowRawCtx, f, getShadowColor(f), isMobile ? 0.83 : 1.21);
+    drawShadowShape(shadowRawCtx, f, getShadowColor(f), isMobile ? 0.87 : 1.27);
   }
 
   shadowRawCtx.globalCompositeOperation = 'destination-out';
@@ -2252,7 +2239,7 @@ function drawLightBokehLayer(time = lastRenderAt) {
     drawLightBlob(lightBokehRawCtx, b, scale);
   });
   drawClusterGlows(lightBokehRawCtx);
-  drawRollFocusLights(lightBokehRawCtx, 0.55);
+  if (hasRollItems) drawRollFocusLights(lightBokehRawCtx, 0.55);
   lightBokehRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightBokehRawCtx);
   const bokehBright = isMobile ? 1.04 : 1.1 + (1 - renderScale) * 0.28;
@@ -2288,8 +2275,10 @@ function drawLightMap(time = lastRenderAt, recentlyMoved = false) {
     drawLightBlob(lightRawCtx, b, scale);
   });
   drawClusterGlows(lightRawCtx);
-  drawRollFocusLights(lightRawCtx, 0.9);
-  drawRollFocusShadows(lightRawCtx, 'mask');
+  if (hasRollItems) {
+    drawRollFocusLights(lightRawCtx, 0.9);
+    drawRollFocusShadows(lightRawCtx, 'mask');
+  }
   lightRawCtx.globalCompositeOperation = 'source-over';
   endBufferDraw(lightRawCtx);
 
@@ -2396,9 +2385,9 @@ function drawWall() {
   wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
-  drawRollFocusShadows(wallCtx, 'wall');
+  if (hasRollItems) drawRollFocusShadows(wallCtx, 'wall');
 
-  if (perfTier < 3) {
+  if (perfTier < 3 && (!sceneIdle || perfTier < 2)) {
     wallCtx.globalCompositeOperation = 'lighter';
     wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
     wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
@@ -2414,7 +2403,6 @@ function shouldRedrawWall() {
   if (hasRollItems) return true;
   if (lastShadowLayerAt === lastRenderAt) return true;
   if (lastBokehUpdateAt === lastRenderAt) return true;
-  if (!sceneIdle) return true;
   return false;
 }
 
@@ -2557,8 +2545,7 @@ function drawMaskedText() {
   drawMaskedRollLines();
 
   textCtx.globalCompositeOperation = 'destination-in';
-  textCtx.drawImage(lightCanvas, 0, 0);
-  textCtx.drawImage(lightCanvas, 0, 0);
+  textCtx.drawImage(lightCanvas, 0, 0, canvas.width, canvas.height);
   textCtx.globalCompositeOperation = 'source-over';
   lastTextCanvasDrawAt = lastRenderAt;
 }
@@ -2762,7 +2749,7 @@ function drawMobileBackdrop(time) {
 }
 
 function drawMobileLightMap() {
-  lightCtx.clearRect(0, 0, canvas.width, canvas.height);
+  lightCtx.clearRect(0, 0, lightCanvas.width, lightCanvas.height);
   lightCtx.globalCompositeOperation = 'lighter';
 
   const lights = getMobileLightSources();
@@ -2802,8 +2789,8 @@ function render(time) {
     return;
   }
 
-  const targetFrameMs = width < MOBILE_BREAKPOINT ? MOBILE_TARGET_FRAME_MS : 0;
-  if (targetFrameMs && time - lastRenderAt < targetFrameMs) {
+  const targetFrameMs = width < MOBILE_BREAKPOINT ? MOBILE_TARGET_FRAME_MS : DESKTOP_TARGET_FRAME_MS;
+  if (lastRenderAt && time - lastRenderAt < targetFrameMs) {
     requestAnimationFrame(render);
     return;
   }
