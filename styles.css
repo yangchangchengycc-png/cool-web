@@ -480,6 +480,8 @@ body::before {
   min-height: 100vh;
   min-height: 100svh;
   overflow-x: hidden;
+  --project-line: 2px;
+  --project-line-color: #000;
 }
 
 body.layout-detail::before {
@@ -550,7 +552,7 @@ body.layout-detail::before {
   position: relative;
   width: 100%;
   aspect-ratio: 1.55 / 1;
-  border: 4px solid rgba(0, 0, 0, 0.88);
+  border: var(--project-line) solid var(--project-line-color);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
@@ -652,12 +654,14 @@ body.layout-detail::before {
   grid-template-columns: minmax(0, 1fr) auto auto;
   width: 100%;
   margin-top: 0.35rem;
+  border: var(--project-line) solid var(--project-line-color);
 }
 
 .project-title-box,
 .project-tab {
   min-height: 2.35rem;
-  border: 4px solid rgba(0, 0, 0, 0.88);
+  border: 0;
+  border-right: var(--project-line) solid var(--project-line-color);
   background: transparent;
   font-family: var(--font-ui);
   font-size: calc(clamp(0.72rem, 0.95vw, 0.86rem) + 1px);
@@ -679,8 +683,8 @@ body.layout-detail::before {
   cursor: pointer;
 }
 
-.project-tab + .project-tab {
-  border-left: 0;
+.project-tab:last-child {
+  border-right: 0;
 }
 
 .project-tab.is-active {
@@ -712,13 +716,18 @@ body.layout-detail::before {
 .project-rule::before {
   content: '';
   width: 100%;
-  height: 4px;
+  height: var(--project-line);
   background: rgba(0, 0, 0, 0.55);
+}
+
+.project-rule--top::before,
+.project-rule--top .project-rule__dash {
+  background: var(--project-line-color);
 }
 
 .project-rule__dash {
   width: 2.35rem;
-  height: 6px;
+  height: 4px;
   background: rgba(0, 0, 0, 0.88);
 }
 
@@ -742,7 +751,7 @@ body.layout-detail::before {
   display: inline-block;
   align-self: flex-start;
   padding: 0.22rem 0.62rem;
-  border: 4px solid rgba(0, 0, 0, 0.88);
+  border: var(--project-line) solid var(--project-line-color);
   font-size: calc(0.78rem + 1px);
   font-weight: 600;
   line-height: 1.2;
@@ -837,7 +846,7 @@ body.project-lightbox-open {
   width: auto;
   height: auto;
   object-fit: contain;
-  border: 4px solid rgba(0, 0, 0, 0.88);
+  border: var(--project-line) solid var(--project-line-color);
 }
 
 .layout-work {
@@ -1068,10 +1077,12 @@ body.project-lightbox-open {
 
   .project-title-box {
     grid-column: 1 / -1;
+    border-right: 0;
+    border-bottom: var(--project-line) solid var(--project-line-color);
   }
 
-  .project-tab + .project-tab {
-    border-left: 1px solid rgba(0, 0, 0, 0.88);
+  .project-tab:last-child {
+    border-right: 0;
   }
 }
 

@@ -7,16 +7,22 @@ window.PROJECT_PAGES = {
     slug: 'precarious-force',
     title: 'precarious force',
     statement:
-      'A study of unstable equilibrium and the tension between support and collapse. Structural elements appear poised on the edge of failure, asking whether balance is an achievement or a temporary illusion.',
-    materials: 'Mixed media',
-    dimensions: 'TBD',
-    year: '2024',
+      'Using balance as the primary language, this artwork explores the conflict between the weight of reality and the lightness of ideals. Like the classical imagery of the goddess of justice, balance here does not settle contradictions, but exposes their coexistence. A feather is chosen not merely for its lightness, but for the specific weight it represents\u2014appearing close to the earth while pointing toward the sky, it operates along the fault line between lightness and heaviness, ideal and reality, visible forces and hidden systems.',
+    materials: 'Acrylic. Metal. Step motor. Feather',
+    dimensions: '3m x 0.2m x 0.4m',
+    year: '2022',
     media: {
       photo: [
         { src: '../assets/projects/precarious-force-hero.jpg', alt: 'precarious force installation view' },
         { src: '../assets/projects/precarious-force-01.png', alt: 'precarious force detail' },
       ],
-      video: [],
+      video: [
+        {
+          youtube: 's8IcE48qEbI',
+          poster: '../assets/projects/precarious-force-hero.jpg',
+          alt: 'precarious force video',
+        },
+      ],
     },
   },
   'above-the-water': {
@@ -69,22 +75,15 @@ window.PROJECT_PAGES = {
     slug: 'river',
     title: 'you can\u2019t step into the same river twice',
     statement:
-      'Using balance as the primary language, this artwork explores the conflict between the weight of reality and the lightness of ideals. Like the classical imagery of the goddess of justice, balance here does not settle contradictions, but exposes their coexistence. A feather is chosen not merely for its lightness, but for the specific weight it represents\u2014appearing close to the earth while pointing toward the sky, it operates along the fault line between lightness and heaviness, ideal and reality, visible forces and hidden systems.',
-    materials: 'Acrylic. Metal. Step motor. Feather',
-    dimensions: '3m x 0.2m x 0.4m',
-    year: '2022',
+      'A related study in change, repetition, and the impossibility of returning to the same moment twice.',
+    materials: 'TBD',
+    dimensions: 'TBD',
+    year: 'TBD',
     media: {
       photo: [
         { src: '../assets/projects/precarious-force-hero.jpg', alt: 'you can\u2019t step into the same river twice' },
-        { src: '../assets/projects/precarious-force-01.png', alt: 'you can\u2019t step into the same river twice detail' },
       ],
-      video: [
-        {
-          youtube: 's8IcE48qEbI',
-          poster: '../assets/projects/precarious-force-hero.jpg',
-          alt: 'you can\u2019t step into the same river twice video',
-        },
-      ],
+      video: [],
     },
   },
   'trees-in-the-plastic-boxes': {
