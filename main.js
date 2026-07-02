@@ -24,6 +24,9 @@ let dpr = 1;
 let bufferW = 0;
 let bufferH = 0;
 let renderScale = 1;
+let textVisScale = 1;
+let textVisW = 0;
+let textVisH = 0;
 let perfTier = 1;
 let lightBrightBoost = 1;
 let renderFrame = 0;
@@ -40,6 +43,7 @@ let hasRollItems = false;
 let sceneIdle = true;
 let pageVisible = true;
 let lastTextCanvasDrawAt = -1;
+let lastCompositedAt = 0;
 let lastTextVisLightBuildAt = -1;
 let lastTextVisBuildAt = -1;
 let lastTextVisShadowAt = -1;
@@ -61,22 +65,26 @@ let cachedRollLineGroups = [];
 
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
 const DESKTOP_TARGET_FRAME_MS = 1000 / 60;
+const DESKTOP_ACTIVE_FRAME_MS = 1000 / 45;
+const DESKTOP_IDLE_FRAME_MS = 1000 / 24;
 const DESKTOP_CLUSTER_FRAME_MS = 1000 / 30;
-const DESKTOP_CLUSTER_IDLE_FRAME_MS = 1000 / 12;
-const DESKTOP_SHADOW_FRAME_MS = 1000 / 30;
+const DESKTOP_CLUSTER_IDLE_FRAME_MS = 1000 / 10;
+const DESKTOP_SHADOW_FRAME_MS = 1000 / 24;
+const DESKTOP_SHADOW_IDLE_FRAME_MS = 1000 / 12;
 const DESKTOP_BOKEH_FRAME_MS = 1000 / 24;
-const DESKTOP_BOKEH_IDLE_FRAME_MS = 1000 / 16;
-const DESKTOP_LIGHT_FRAME_MS = 1000 / 26;
-const DESKTOP_IDLE_LIGHT_FRAME_MS = 1000 / 18;
+const DESKTOP_BOKEH_IDLE_FRAME_MS = 1000 / 14;
+const DESKTOP_LIGHT_FRAME_MS = 1000 / 22;
+const DESKTOP_IDLE_LIGHT_FRAME_MS = 1000 / 12;
 const DESKTOP_FX_FRAME_MS = 1000 / 24;
 const MOBILE_BACKDROP_IDLE_MS = 1000 / 22;
 const MOBILE_LIGHT_IDLE_MS = 1000 / 26;
 const DESKTOP_TEXT_MEASURE_MS = 110;
-const DESKTOP_TEXT_MEASURE_IDLE_MS = 260;
-const DESKTOP_TEXT_DRAW_IDLE_MS = 1000 / 14;
-const DESKTOP_TEXT_DRAW_ACTIVE_MS = 1000 / 28;
-const DESKTOP_TEXT_VIS_SHADOW_IDLE_MS = 1000 / 12;
-const DESKTOP_TEXT_VIS_SHADOW_ACTIVE_MS = 1000 / 20;
+const DESKTOP_TEXT_MEASURE_IDLE_MS = 320;
+const DESKTOP_TEXT_DRAW_IDLE_MS = 1000 / 10;
+const DESKTOP_TEXT_DRAW_ACTIVE_MS = 1000 / 24;
+const DESKTOP_TEXT_VIS_SHADOW_IDLE_MS = 1000 / 10;
+const DESKTOP_TEXT_VIS_SHADOW_ACTIVE_MS = 1000 / 18;
+const DESKTOP_AMBIENT_WAKE_MS = 1000 / 10;
 const SHADOW_LIGHTEN = 0.05;
 const SHADOW_WALL_MULTIPLY = 0.78 * (1 - SHADOW_LIGHTEN);
 const SHADOW_WALL_MULTIPLY_MOBILE = 0.64 * (1 - SHADOW_LIGHTEN);
@@ -222,26 +230,36 @@ function updatePerfProfile() {
   if (width < MOBILE_BREAKPOINT) {
     perfTier = 0;
     renderScale = 0.7;
+    textVisScale = 1;
     dpr = Math.min(rawDpr, 1.35);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.36;
-    dpr = Math.min(rawDpr, 1);
+    renderScale = 0.3;
+    textVisScale = 0.42;
+    dpr = 1;
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.46;
-    dpr = Math.min(rawDpr, 1.12);
+    renderScale = 0.38;
+    textVisScale = 0.5;
+    dpr = Math.min(rawDpr, 1);
   } else {
     perfTier = 1;
-    renderScale = 0.5;
-    dpr = Math.min(rawDpr, 1.28);
+    renderScale = 0.44;
+    textVisScale = 0.58;
+    dpr = Math.min(rawDpr, 1.15);
   }
 
   if (prefersReducedMotion) {
     renderScale = Math.max(renderScale, 0.78);
+    textVisScale = Math.max(textVisScale, 0.72);
   }
 
   lightBrightBoost = 1.08 + (1 - renderScale) * 0.34;
+}
+
+function syncTextVisSize() {
+  textVisW = Math.max(1, Math.round(canvas.width * textVisScale));
+  textVisH = Math.max(1, Math.round(canvas.height * textVisScale));
 }
 
 function beginBufferDraw(targetCtx) {
@@ -388,7 +406,7 @@ function initBlobs() {
 
   const lightCount = isMobile
     ? 4 + Math.floor(Math.random() * 2)
-    : Math.round((perfTier >= 3 ? 26 : perfTier >= 2 ? 32 : 36) * areaScale);
+    : Math.round((perfTier >= 3 ? 18 : perfTier >= 2 ? 22 : 28) * areaScale);
   for (let i = 0; i < lightCount; i++) {
     let radius = pickLightRadius();
     if (isMobile) radius *= MOBILE_DESKTOP_CROP_SCALE;
@@ -628,7 +646,7 @@ function initGapPatches() {
 
   const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 24 : perfTier >= 3 ? 24 : perfTier >= 2 ? 36 : 58;
+  const maxGapPatches = isMobile ? 24 : perfTier >= 3 ? 16 : perfTier >= 2 ? 24 : 48;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -657,7 +675,7 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [12, 10, 9, 8];
+  const foliageByTier = [10, 8, 7, 6];
   const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
@@ -1209,6 +1227,7 @@ function resize() {
   canvas.height = height * dpr;
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
+  syncTextVisSize();
 
   bufferW = Math.max(1, Math.round(canvas.width * renderScale));
   bufferH = Math.max(1, Math.round(canvas.height * renderScale));
@@ -1252,15 +1271,15 @@ function resize() {
   textMaskCoreCanvas = offTextMaskCore.canvas;
   textMaskCoreCtx = offTextMaskCore.ctx;
 
-  const offTextVis = full();
+  const offTextVis = createOffscreen(textVisW, textVisH);
   textVisCanvas = offTextVis.canvas;
   textVisCtx = offTextVis.ctx;
 
-  const offTextVisLight = full();
+  const offTextVisLight = createOffscreen(textVisW, textVisH);
   textVisLightCanvas = offTextVisLight.canvas;
   textVisLightCtx = offTextVisLight.ctx;
 
-  const offTextVisHover = full();
+  const offTextVisHover = createOffscreen(textVisW, textVisH);
   textVisHoverCanvas = offTextVisHover.canvas;
   textVisHoverCtx = offTextVisHover.ctx;
 
@@ -2292,6 +2311,34 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
   targetCtx.restore();
 }
 
+function getDesktopShadowInterval() {
+  if (sceneIdle && perfTier >= 2) return DESKTOP_SHADOW_IDLE_FRAME_MS;
+  if (perfTier >= 3) return 1000 / 18;
+  if (perfTier >= 2) return 1000 / 20;
+  return DESKTOP_SHADOW_FRAME_MS;
+}
+
+function needsDesktopSceneUpdate(time, recentlyMoved) {
+  if (hasRollItems) return true;
+  if (recentlyMoved || hoveredTextEl) return true;
+  if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
+  if (time - lastCompositedAt >= DESKTOP_AMBIENT_WAKE_MS) return true;
+  if (shouldUpdateLightMap(time, recentlyMoved)) return true;
+  if (shouldUpdateTextVisShadow(recentlyMoved)) return true;
+  if (lastRenderAt - lastShadowLayerAt >= getDesktopShadowInterval()) return true;
+  if (shouldRedrawTextCanvas(recentlyMoved, false)) return true;
+  if (shouldRedrawWall()) return true;
+  if (perfTier >= 2 && shouldSyncBokehFromLightMap(time)) return true;
+  return false;
+}
+
+function getDesktopTargetFrameMs(recentlyMoved) {
+  if (recentlyMoved || hoveredTextEl || hoverTextLight.active) {
+    return perfTier >= 2 ? DESKTOP_ACTIVE_FRAME_MS : DESKTOP_TARGET_FRAME_MS;
+  }
+  return perfTier >= 2 ? DESKTOP_IDLE_FRAME_MS : DESKTOP_TARGET_FRAME_MS;
+}
+
 function shouldUpdateTextVisShadow(recentlyMoved = false) {
   if (!needsScatterTextMask() || lastTextVisLightBuildAt < 0) return false;
   if (lastTextVisLightBuildAt > lastTextVisShadowAt) return true;
@@ -2311,11 +2358,7 @@ function applyScatterTextVisibilityShadowIfNeeded(recentlyMoved = false) {
 
 function drawShadowLayer(recentlyMoved = false) {
   const isMobile = width < MOBILE_BREAKPOINT;
-  const shadowInterval = isMobile
-    ? 0
-    : (sceneIdle && perfTier >= 2
-      ? 1000 / 14
-      : (perfTier >= 3 ? 1000 / 20 : perfTier >= 2 ? 1000 / 24 : DESKTOP_SHADOW_FRAME_MS));
+  const shadowInterval = isMobile ? 0 : getDesktopShadowInterval();
   if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < shadowInterval) {
     applyScatterTextVisibilityShadowIfNeeded(recentlyMoved);
     return;
@@ -2421,42 +2464,55 @@ function updateScatterTextMaskRaw() {
 function composeScatterTextVisibilityLight(isMobile = width < MOBILE_BREAKPOINT) {
   if (!needsScatterTextMask() || !textVisLightCtx) return;
 
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = textVisW;
+  const h = textVisH;
 
-  blurPass(
-    textMaskRawCanvas,
-    textMaskCtx,
-    textMaskCanvas,
-    isMobile ? BLUR_TEXT_MASK_EDGE * 1.05 : BLUR_TEXT_MASK_EDGE,
-    isMobile
-      ? 'brightness(0.58) contrast(11) saturate(0)'
-      : 'brightness(0.6) contrast(13) saturate(0)'
-  );
+  if (perfTier >= 2) {
+    blurPass(
+      textMaskRawCanvas,
+      textMaskCtx,
+      textMaskCanvas,
+      BLUR_TEXT_MASK_EDGE * 0.92,
+      'brightness(0.54) contrast(20) saturate(0)'
+    );
+    textVisLightCtx.clearRect(0, 0, w, h);
+    textVisLightCtx.drawImage(textMaskCanvas, 0, 0, w, h);
+  } else {
+    blurPass(
+      textMaskRawCanvas,
+      textMaskCtx,
+      textMaskCanvas,
+      isMobile ? BLUR_TEXT_MASK_EDGE * 1.05 : BLUR_TEXT_MASK_EDGE,
+      isMobile
+        ? 'brightness(0.58) contrast(11) saturate(0)'
+        : 'brightness(0.6) contrast(13) saturate(0)'
+    );
 
-  blurPass(
-    textMaskRawCanvas,
-    textMaskCoreCtx,
-    textMaskCoreCanvas,
-    isMobile ? BLUR_TEXT_MASK_CORE * 1.1 : BLUR_TEXT_MASK_CORE,
-    isMobile
-      ? 'brightness(0.46) contrast(38) saturate(0)'
-      : 'brightness(0.42) contrast(48) saturate(0)'
-  );
+    blurPass(
+      textMaskRawCanvas,
+      textMaskCoreCtx,
+      textMaskCoreCanvas,
+      isMobile ? BLUR_TEXT_MASK_CORE * 1.1 : BLUR_TEXT_MASK_CORE,
+      isMobile
+        ? 'brightness(0.46) contrast(38) saturate(0)'
+        : 'brightness(0.42) contrast(48) saturate(0)'
+    );
 
-  textVisLightCtx.clearRect(0, 0, w, h);
-  textVisLightCtx.drawImage(textMaskCanvas, 0, 0, w, h);
-  textVisLightCtx.globalCompositeOperation = 'lighten';
-  textVisLightCtx.drawImage(textMaskCoreCanvas, 0, 0, w, h);
-  textVisLightCtx.globalCompositeOperation = 'source-over';
+    textVisLightCtx.clearRect(0, 0, w, h);
+    textVisLightCtx.drawImage(textMaskCanvas, 0, 0, w, h);
+    textVisLightCtx.globalCompositeOperation = 'lighten';
+    textVisLightCtx.drawImage(textMaskCoreCanvas, 0, 0, w, h);
+    textVisLightCtx.globalCompositeOperation = 'source-over';
+  }
+
   lastTextVisLightBuildAt = lastRenderAt;
 }
 
 function applyScatterTextVisibilityShadow() {
   if (!needsScatterTextMask() || !textVisCtx || !textVisLightCtx || lastTextVisLightBuildAt < 0) return;
 
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = textVisW;
+  const h = textVisH;
   textVisCtx.clearRect(0, 0, w, h);
   textVisCtx.drawImage(textVisLightCanvas, 0, 0, w, h);
 
@@ -2496,15 +2552,16 @@ function applyTextVisibilityMask(targetCtx) {
 }
 
 function buildSolidHoverMask() {
-  if (!needsScatterTextMask() || !textMaskCoreCanvas || !textVisHoverCtx) return false;
-
-  const w = canvas.width;
-  const h = canvas.height;
+  if (!needsScatterTextMask() || !textVisHoverCtx) return false;
+  const maskSource = perfTier >= 2 ? textMaskCanvas : textMaskCoreCanvas;
+  if (!maskSource) return false;
   textVisHoverCtx.clearRect(0, 0, w, h);
   textVisHoverCtx.filter = width < MOBILE_BREAKPOINT
     ? 'grayscale(1) brightness(0.38) contrast(72) saturate(0)'
-    : 'grayscale(1) brightness(0.34) contrast(92) saturate(0)';
-  textVisHoverCtx.drawImage(textMaskCoreCanvas, 0, 0, w, h);
+    : (perfTier >= 2
+      ? 'grayscale(1) brightness(0.3) contrast(88) saturate(0)'
+      : 'grayscale(1) brightness(0.34) contrast(92) saturate(0)');
+  textVisHoverCtx.drawImage(maskSource, 0, 0, w, h);
   textVisHoverCtx.filter = 'none';
 
   if (width >= MOBILE_BREAKPOINT) {
@@ -3243,6 +3300,7 @@ function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
 
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
+  lastCompositedAt = time;
 }
 
 function render(time) {
@@ -3251,10 +3309,18 @@ function render(time) {
     return;
   }
 
+  const recentlyMoved = time - lastPointerMove < 120;
+  sceneIdle = !recentlyMoved && !hasRollItems && !hoverTextLight.active && !hoveredTextEl;
+
   const targetFrameMs = width < MOBILE_BREAKPOINT
     ? MOBILE_TARGET_FRAME_MS
-    : (perfTier >= 3 ? 1000 / 50 : DESKTOP_TARGET_FRAME_MS);
+    : getDesktopTargetFrameMs(recentlyMoved);
   if (lastRenderAt && time - lastRenderAt < targetFrameMs) {
+    requestAnimationFrame(render);
+    return;
+  }
+
+  if (width >= MOBILE_BREAKPOINT && sceneIdle && !needsDesktopSceneUpdate(time, recentlyMoved)) {
     requestAnimationFrame(render);
     return;
   }
@@ -3265,8 +3331,6 @@ function render(time) {
   cachedCanvasRectFrame = -1;
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
-  const recentlyMoved = time - lastPointerMove < 120;
-  sceneIdle = !recentlyMoved && !pointerOnScreen && !hasRollItems && !hoverTextLight.active && !hoveredTextEl;
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
@@ -3304,6 +3368,7 @@ function render(time) {
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
   if (perfTier < 2) drawTyndallEffect(time);
+  lastCompositedAt = time;
 
   requestAnimationFrame(render);
 }
