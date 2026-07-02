@@ -7,10 +7,11 @@
 }
 
 :root {
-  --wall: #ebe9e4;
+  --wall: #efefec;
   --text: #2a2a28;
   --text-muted: rgba(42, 42, 40, 0.45);
   --header-fg: rgba(42, 42, 40, 0.7);
+  --font-ui: "PingFang SC", "PingFang TC", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
 }
 
 html {
@@ -22,13 +23,24 @@ body {
   min-height: 100svh;
   overflow-x: hidden;
   background: var(--wall);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-image: url('assets/paper-texture.png');
   background-size: cover;
   background-position: center;
-  color: var(--text);
-  font-family: 'Noto Sans SC', system-ui, sans-serif;
-  font-weight: 300;
-  -webkit-font-smoothing: antialiased;
+  filter: brightness(1.1);
+  pointer-events: none;
 }
 
 #scene {
@@ -320,18 +332,17 @@ body {
 .layout-detail,
 .layout-work {
   color: #000;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
 }
 
 .layout-home {
   min-height: 100vh;
   min-height: 100svh;
   overflow: hidden;
-  background: var(--wall);
-  background-image: url('assets/paper-texture.png');
-  background-size: cover;
-  background-position: center;
 }
 
 .minimal-header {
@@ -342,13 +353,16 @@ body {
   z-index: 20;
   display: flex;
   justify-content: flex-end;
+  align-items: flex-start;
   padding: 2.5vh 4.7vw 0 4.7vw;
+  pointer-events: none;
 }
 
 .minimal-nav {
   display: flex;
   gap: 2.5rem;
   align-items: center;
+  pointer-events: auto;
 }
 
 .minimal-nav a,
@@ -393,7 +407,7 @@ body {
 
 .scatter-item .project__title {
   display: block;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: clamp(1.25rem, 2.28vw, 2rem);
   font-weight: 400;
   line-height: 1.1;
@@ -609,6 +623,7 @@ body {
   width: max-content;
   max-width: min(92vw, 40rem);
   color: transparent;
+  font-family: var(--font-ui);
   font-size: clamp(1rem, 1.45vw, 1.42rem);
   line-height: 1;
   text-align: center;
@@ -631,6 +646,7 @@ body {
 }
 
 .detail-title {
+  font-family: var(--font-ui);
   font-size: clamp(2.5rem, 7vw, 7rem);
   font-weight: 400;
   letter-spacing: -0.06em;
@@ -640,6 +656,7 @@ body {
 .detail-meta {
   margin-top: 1.6rem;
   max-width: 32rem;
+  font-family: var(--font-ui);
   font-size: clamp(0.92rem, 1.2vw, 1.1rem);
   line-height: 1.6;
   color: rgba(0, 0, 0, 0.54);
@@ -660,6 +677,11 @@ body {
 
   .minimal-nav {
     gap: 1.25rem;
+  }
+
+  .detail-back {
+    left: 1.25rem;
+    top: 1.25rem;
   }
 
   .minimal-nav a {

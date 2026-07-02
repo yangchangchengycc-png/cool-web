@@ -67,7 +67,7 @@ const wind = {
   nextGustAt: 0,
 };
 
-const WALL = '#ebe9e4';
+const WALL = '#efefec';
 // Multiply tones — lower RGB = deeper shadow on the wall
 const SHADOW_LIGHT = { r: 226, g: 224, b: 218 };
 const SHADOW_MID = { r: 200, g: 196, b: 188 };
@@ -85,6 +85,7 @@ const LIGHT = { r: 255, g: 251, b: 244 };
 const TEXT = '#b8b8b4';
 const TEXT_META = 'rgba(184, 184, 180, 0.62)';
 const TEXT_HOVER = '#000000';
+const UI_FONT = '"PingFang SC", "PingFang TC", "Hiragino Sans GB", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif';
 const HOVER_SCALE_TARGET = 1.06;
 const HOVER_SCALE_LERP = 0.2;
 
@@ -180,19 +181,19 @@ function updatePerfProfile() {
   if (width < MOBILE_BREAKPOINT) {
     perfTier = 0;
     renderScale = 0.72;
-    dpr = Math.min(rawDpr, 1.1);
+    dpr = Math.min(rawDpr, 2);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
     renderScale = 0.38;
-    dpr = Math.min(rawDpr, 1);
+    dpr = Math.min(rawDpr, 2);
   } else if (width >= 1400) {
     perfTier = 2;
     renderScale = 0.48;
-    dpr = Math.min(rawDpr, 1);
+    dpr = Math.min(rawDpr, 2);
   } else {
     perfTier = 1;
     renderScale = 0.58;
-    dpr = Math.min(rawDpr, 1.05);
+    dpr = Math.min(rawDpr, 2);
   }
 
   if (prefersReducedMotion) {
@@ -1152,6 +1153,8 @@ function resize() {
   const off4 = full();
   textCanvas = off4.canvas;
   textCtx = off4.ctx;
+  textCtx.imageSmoothingEnabled = true;
+  textCtx.imageSmoothingQuality = 'high';
 
   const offFxRaw = buf();
   fxRawCanvas = offFxRaw.canvas;
@@ -2301,7 +2304,9 @@ function drawPaperTexture(targetCtx, w, h, alpha = 1) {
 
   targetCtx.save();
   targetCtx.globalAlpha = alpha;
+  targetCtx.filter = 'brightness(1.1)';
   targetCtx.drawImage(paperTexture, sx, sy, sw, sh, 0, 0, w, h);
+  targetCtx.filter = 'none';
   targetCtx.restore();
 }
 
@@ -2311,7 +2316,7 @@ function drawWall() {
 
   if (grainPattern) {
     wallCtx.fillStyle = grainPattern;
-    wallCtx.globalAlpha = paperTextureReady ? 0.2 : 0.55;
+    wallCtx.globalAlpha = paperTextureReady ? 0.1 : 0.55;
     wallCtx.fillRect(0, 0, canvas.width, canvas.height);
     wallCtx.globalAlpha = 1;
   }
@@ -2438,7 +2443,8 @@ function drawMaskedText() {
 
   for (const item of textItems) {
     const hoverScale = getTextHoverScale(item.sourceEl);
-    textCtx.font = `400 ${item.fontSize}px ${item.fontFamily || 'Arial, Helvetica, sans-serif'}`;
+    const fontSize = Math.round(item.fontSize);
+    textCtx.font = `400 ${fontSize}px ${item.fontFamily || UI_FONT}`;
     textCtx.fillStyle = hoverScale > 1.01 ? TEXT_HOVER : TEXT;
     textCtx.textBaseline = 'top';
 
@@ -2463,7 +2469,7 @@ function drawMaskedText() {
     }
 
     if (!item.meta) continue;
-    textCtx.font = `300 ${item.metaSize}px "Noto Sans SC", sans-serif`;
+    textCtx.font = `400 ${Math.round(item.metaSize)}px ${UI_FONT}`;
     textCtx.fillStyle = TEXT_META;
     textCtx.textAlign = 'left';
     textCtx.fillText(item.meta, item.metaX, item.metaY);
@@ -2615,7 +2621,7 @@ function drawMobileBackdrop(time) {
 
   if (grainPattern) {
     wallCtx.fillStyle = grainPattern;
-    wallCtx.globalAlpha = paperTextureReady ? 0.16 : 0.32;
+    wallCtx.globalAlpha = paperTextureReady ? 0.08 : 0.32;
     wallCtx.fillRect(0, 0, w, h);
     wallCtx.globalAlpha = 1;
   }
