@@ -483,6 +483,9 @@ body::before {
   --project-line: 2px;
   --project-line-color: #000;
   --project-ui-scale: 0.8;
+  --project-nav-height: 1.35rem;
+  --project-viewer-gap: 0.55rem;
+  --project-stage-top: calc(var(--project-nav-height) + var(--project-viewer-gap));
 }
 
 .layout-detail .minimal-nav {
@@ -505,7 +508,8 @@ body.layout-detail::before {
   min-height: 100svh;
   padding:
     clamp(4.5rem, 10vh, 6rem)
-    clamp(1.5rem, 3.5vw, 3.5rem);
+    clamp(1.5rem, 3.5vw, 3.5rem)
+    clamp(4.5rem, 10vh, 6rem);
   pointer-events: none;
 }
 
@@ -543,7 +547,7 @@ body.layout-detail::before {
   display: flex;
   flex-direction: column;
   gap: 1.35rem;
-  padding-top: clamp(1rem, 4vh, 3rem);
+  padding-top: var(--project-stage-top);
   transform-origin: top left;
 }
 
@@ -551,14 +555,14 @@ body.layout-detail::before {
   display: grid;
   grid-template-rows: auto 1fr auto;
   justify-items: center;
-  gap: 0.55rem;
+  gap: var(--project-viewer-gap);
 }
 
 .project-nav {
   display: grid;
   place-items: center;
   width: 2rem;
-  height: 1.35rem;
+  height: var(--project-nav-height);
   padding: 0;
   border: 0;
   background: transparent;
