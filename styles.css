@@ -513,7 +513,7 @@ body.layout-detail::before {
   display: grid;
   grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
   gap: clamp(2rem, 4.5vw, 4.5rem);
-  align-items: center;
+  align-items: start;
   width: min(94vw, 112rem);
   margin: 0 auto;
   padding: 0;
@@ -543,7 +543,7 @@ body.layout-detail::before {
   display: flex;
   flex-direction: column;
   gap: 1.35rem;
-  padding-top: 0;
+  padding-top: clamp(1rem, 4vh, 3rem);
   transform-origin: top left;
 }
 
