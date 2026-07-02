@@ -14,6 +14,7 @@ const paperTexture = new Image();
 let paperTextureReady = false;
 paperTexture.onload = () => {
   paperTextureReady = true;
+  wallBaseCanvas = null;
 };
 paperTexture.src = new URL('assets/paper-texture.png', scriptBase).href;
 
@@ -34,6 +35,11 @@ let lastBokehUpdateAt = 0;
 let lastLightMapUpdateAt = 0;
 let lastFxOverlayAt = 0;
 let hasRollItems = false;
+let sceneIdle = true;
+let pageVisible = true;
+let lastTextCanvasDrawAt = -1;
+let wallBaseCanvas = null;
+let wallBaseCtx = null;
 let cachedOpenRollRect = null;
 let cachedOpenRollFrame = -1;
 let cachedCanvasRect = null;
@@ -42,15 +48,22 @@ let cachedScatterItems = [];
 let cachedRollItemEls = [];
 let cachedRollViewport = null;
 let cachedWorkRollEls = [];
+let cachedRollLineGroups = [];
 
 const MOBILE_TARGET_FRAME_MS = 1000 / 40;
 const DESKTOP_CLUSTER_FRAME_MS = 1000 / 30;
+const DESKTOP_CLUSTER_IDLE_FRAME_MS = 1000 / 12;
 const DESKTOP_SHADOW_FRAME_MS = 1000 / 30;
+const DESKTOP_SHADOW_IDLE_FRAME_MS = 1000 / 18;
 const DESKTOP_BOKEH_FRAME_MS = 1000 / 24;
+const DESKTOP_BOKEH_IDLE_FRAME_MS = 1000 / 16;
 const DESKTOP_LIGHT_FRAME_MS = 1000 / 26;
 const DESKTOP_IDLE_LIGHT_FRAME_MS = 1000 / 18;
 const DESKTOP_FX_FRAME_MS = 1000 / 24;
 const DESKTOP_TEXT_MEASURE_MS = 110;
+const SHADOW_LIGHTEN = 0.1;
+const SHADOW_WALL_MULTIPLY = 0.78 * (1 - SHADOW_LIGHTEN);
+const SHADOW_WALL_MULTIPLY_MOBILE = 0.64 * (1 - SHADOW_LIGHTEN);
 
 const mouse = { targetX: 0.5, targetY: 0.5 };
 const smoothMouse = { x: 0.5, y: 0.5 };
@@ -68,11 +81,12 @@ const wind = {
 };
 
 const WALL = '#efefec';
+const SHADOW_LIGHTEN_CHANNEL = (v) => Math.round(v + (255 - v) * SHADOW_LIGHTEN);
 // Multiply tones — lower RGB = deeper shadow on the wall
-const SHADOW_LIGHT = { r: 226, g: 224, b: 218 };
-const SHADOW_MID = { r: 200, g: 196, b: 188 };
-const SHADOW_DARK = { r: 176, g: 172, b: 162 };
-const GAP_SHADOW = { r: 128, g: 122, b: 112 };
+const SHADOW_LIGHT = { r: SHADOW_LIGHTEN_CHANNEL(226), g: SHADOW_LIGHTEN_CHANNEL(224), b: SHADOW_LIGHTEN_CHANNEL(218) };
+const SHADOW_MID = { r: SHADOW_LIGHTEN_CHANNEL(200), g: SHADOW_LIGHTEN_CHANNEL(196), b: SHADOW_LIGHTEN_CHANNEL(188) };
+const SHADOW_DARK = { r: SHADOW_LIGHTEN_CHANNEL(176), g: SHADOW_LIGHTEN_CHANNEL(172), b: SHADOW_LIGHTEN_CHANNEL(162) };
+const GAP_SHADOW = { r: SHADOW_LIGHTEN_CHANNEL(128), g: SHADOW_LIGHTEN_CHANNEL(122), b: SHADOW_LIGHTEN_CHANNEL(112) };
 const SHADOW_HUES = [
   { r: 10, g: 6, b: -8 },
   { r: -6, g: 12, b: 4 },
@@ -180,20 +194,20 @@ function updatePerfProfile() {
 
   if (width < MOBILE_BREAKPOINT) {
     perfTier = 0;
-    renderScale = 0.72;
-    dpr = Math.min(rawDpr, 2);
+    renderScale = 0.74;
+    dpr = Math.min(rawDpr, 1.5);
   } else if (width >= 1920 || megaPx > 2.4) {
     perfTier = 3;
-    renderScale = 0.38;
-    dpr = Math.min(rawDpr, 2);
+    renderScale = 0.46;
+    dpr = Math.min(rawDpr, 1.2);
   } else if (width >= 1400) {
     perfTier = 2;
-    renderScale = 0.48;
-    dpr = Math.min(rawDpr, 2);
+    renderScale = 0.52;
+    dpr = Math.min(rawDpr, 1.35);
   } else {
     perfTier = 1;
-    renderScale = 0.58;
-    dpr = Math.min(rawDpr, 2);
+    renderScale = 0.6;
+    dpr = Math.min(rawDpr, 1.5);
   }
 
   if (prefersReducedMotion) {
@@ -477,7 +491,7 @@ function initBlobs() {
     });
   }
 
-  const edgeCount = isMobile ? 0 : (largeScreen ? (perfTier >= 3 ? 12 : 14) : 12);
+  const edgeCount = isMobile ? 0 : (largeScreen ? (perfTier >= 3 ? 9 : 14) : 12);
   for (let i = 0; i < edgeCount; i++) {
     const { nx, ny } = randomPerimeterNorm();
     const radius = (78 + Math.random() * 68) * LIGHT_SIZE_SCALE * (isMobile ? MOBILE_DESKTOP_CROP_SCALE : (largeScreen ? 1.14 : 1));
@@ -576,7 +590,7 @@ function initGapPatches() {
 
   const maxDist = isMobile ? 165 : 270;
   const minDist = 26;
-  const maxGapPatches = isMobile ? 32 : perfTier >= 3 ? 48 : perfTier >= 2 ? 68 : 92;
+  const maxGapPatches = isMobile ? 28 : perfTier >= 3 ? 36 : perfTier >= 2 ? 52 : 72;
 
   gapLoop:
   for (let i = 0; i < lights.length; i++) {
@@ -605,7 +619,7 @@ function initFoliage() {
   const isMobile = width < MOBILE_BREAKPOINT;
   if (isMobile) return;
 
-  const foliageByTier = [20, 20, 17, 15];
+  const foliageByTier = [18, 18, 15, 13];
   const foliageCount = foliageByTier[perfTier] ?? 28;
 
   for (let i = 0; i < foliageCount; i++) {
@@ -694,7 +708,7 @@ function initLightBeams() {
   lightBeams = [];
   if (width < MOBILE_BREAKPOINT) return;
 
-  const beamByTier = [5, 7, 6, 5];
+  const beamByTier = [4, 6, 5, 4];
   const count = beamByTier[perfTier] ?? 7;
   for (let i = 0; i < count; i++) {
     lightBeams.push({
@@ -839,9 +853,16 @@ function drawDust(time) {
 }
 
 function drawTyndallEffect(time) {
+  if (perfTier >= 3) return;
+
   const skipFx = perfTier >= 2 && time - lastFxOverlayAt < DESKTOP_FX_FRAME_MS;
-  if (!skipFx) {
+  if (!skipFx && perfTier < 2) {
     if (renderFrame % 3 === 0) drawGodRays(time);
+    updateDust(time);
+    lastFxOverlayAt = time;
+  } else if (!skipFx && sceneIdle) {
+    lastFxOverlayAt = time;
+  } else if (!skipFx) {
     updateDust(time);
     lastFxOverlayAt = time;
   }
@@ -855,7 +876,7 @@ function drawTyndallEffect(time) {
   }
   ctx.globalAlpha = 1;
 
-  if (!skipFx && perfTier < 3) {
+  if (!skipFx && perfTier < 2 && !sceneIdle) {
     ctx.globalCompositeOperation = 'lighter';
     drawDust(time);
   }
@@ -864,7 +885,8 @@ function drawTyndallEffect(time) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
-function drawFrostOverlay() {
+function drawFrostOverlay(force = false) {
+  if (!force && sceneIdle && perfTier >= 1) return;
   const w = canvas.width;
   const h = canvas.height;
   if (!frostPattern && !grainPattern) return;
@@ -890,6 +912,14 @@ function refreshDomCaches() {
   cachedRollItemEls = [...document.querySelectorAll('.roll-item')];
   cachedRollViewport = document.querySelector('.roll-viewport');
   cachedWorkRollEls = [...document.querySelectorAll('.work-roll')];
+  cachedRollLineGroups = cachedWorkRollEls.map((roll) => ({
+    roll,
+    lines: [...roll.querySelectorAll('.roll-line')].map((line) => ({
+      line,
+      spans: [...line.querySelectorAll('span')],
+      isBottom: line.classList.contains('roll-line--bottom'),
+    })),
+  }));
   hasRollItems = cachedRollItemEls.length > 0;
 }
 
@@ -1111,6 +1141,9 @@ function resize() {
   cachedCanvasRectFrame = -1;
   updatePerfProfile();
 
+  wallBaseCanvas = null;
+  lastTextCanvasDrawAt = -1;
+
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   canvas.style.width = `${width}px`;
@@ -1209,9 +1242,9 @@ function getShadowColor(b) {
   };
 
   return {
-    r: Math.round(Math.min(240, Math.max(158, base.r + hue.r * hueMix))),
-    g: Math.round(Math.min(238, Math.max(154, base.g + hue.g * hueMix))),
-    b: Math.round(Math.min(234, Math.max(148, base.b + hue.b * hueMix))),
+    r: Math.round(Math.min(240, Math.max(171, base.r + hue.r * hueMix))),
+    g: Math.round(Math.min(238, Math.max(167, base.g + hue.g * hueMix))),
+    b: Math.round(Math.min(234, Math.max(161, base.b + hue.b * hueMix))),
   };
 }
 
@@ -1240,9 +1273,9 @@ function getGapShadowColor(patch) {
   };
 
   return {
-    r: Math.round(Math.min(142, Math.max(102, base.r + hue.r * hueMix))),
-    g: Math.round(Math.min(140, Math.max(98, base.g + hue.g * hueMix))),
-    b: Math.round(Math.min(136, Math.max(92, base.b + hue.b * hueMix))),
+    r: Math.round(Math.min(142, Math.max(112, base.r + hue.r * hueMix))),
+    g: Math.round(Math.min(140, Math.max(108, base.g + hue.g * hueMix))),
+    b: Math.round(Math.min(136, Math.max(102, base.b + hue.b * hueMix))),
   };
 }
 
@@ -1280,10 +1313,11 @@ function drawGapPatch(targetCtx, blobA, blobB, patch) {
 
 function updateWind(time) {
   if (prefersReducedMotion) return;
+  if (sceneIdle && renderFrame % 3 !== 0) return;
 
   const t = time * 0.001;
   const idle = !pointerOnScreen;
-  const idleBoost = idle ? 1.7 : 0.55;
+  const idleBoost = idle ? 1.35 : 0.55;
 
   if (time > wind.nextGustAt) {
     const strength = idle ? 1.5 : 0.6;
@@ -1603,6 +1637,8 @@ function drawClusterGlows(targetCtx) {
 }
 
 function updateBlobs(time) {
+  if (sceneIdle && renderFrame % 2 !== 0) return;
+
   const t = time * 0.001;
   const idle = !pointerOnScreen;
   const motionScale = idle ? 1.6 : 1;
@@ -1631,7 +1667,8 @@ function updateBlobs(time) {
     }
   }
 
-  if (width < MOBILE_BREAKPOINT || time - lastClusterUpdateAt > DESKTOP_CLUSTER_FRAME_MS) {
+  const clusterInterval = sceneIdle ? DESKTOP_CLUSTER_IDLE_FRAME_MS : DESKTOP_CLUSTER_FRAME_MS;
+  if (width < MOBILE_BREAKPOINT || time - lastClusterUpdateAt > clusterInterval) {
     updateLightClustering(time);
     lastClusterUpdateAt = time;
   }
@@ -1848,12 +1885,13 @@ function drawLightCutout(targetCtx, b, alphaScale = 1.08, radiusScale = 1.04) {
 function fillShadowBase(targetCtx) {
   const w = canvas.width;
   const h = canvas.height;
+  const c = SHADOW_LIGHTEN_CHANNEL;
   const grad = targetCtx.createLinearGradient(w * 0.92, -h * 0.08, -w * 0.12, h * 1.05);
-  grad.addColorStop(0, 'rgb(230, 227, 221)');
-  grad.addColorStop(0.32, 'rgb(210, 206, 198)');
-  grad.addColorStop(0.58, 'rgb(198, 200, 206)');
-  grad.addColorStop(0.82, 'rgb(188, 182, 172)');
-  grad.addColorStop(1, 'rgb(176, 170, 158)');
+  grad.addColorStop(0, `rgb(${c(230)}, ${c(227)}, ${c(221)})`);
+  grad.addColorStop(0.32, `rgb(${c(210)}, ${c(206)}, ${c(198)})`);
+  grad.addColorStop(0.58, `rgb(${c(198)}, ${c(200)}, ${c(206)})`);
+  grad.addColorStop(0.82, `rgb(${c(188)}, ${c(182)}, ${c(172)})`);
+  grad.addColorStop(1, `rgb(${c(176)}, ${c(170)}, ${c(158)})`);
   targetCtx.fillStyle = grad;
   targetCtx.fillRect(0, 0, w, h);
 }
@@ -1902,12 +1940,12 @@ function drawShadowAmbientWashes(targetCtx) {
   const w = canvas.width;
   const h = canvas.height;
   const washes = [
-    { x: 0.16, y: 0.22, r: 0.44, rgb: [186, 178, 168], a: 0.22 },
-    { x: 0.68, y: 0.32, r: 0.4, rgb: [174, 180, 188], a: 0.2 },
-    { x: 0.42, y: 0.68, r: 0.46, rgb: [176, 184, 172], a: 0.19 },
-    { x: 0.82, y: 0.74, r: 0.36, rgb: [188, 178, 170], a: 0.2 },
-    { x: 0.28, y: 0.52, r: 0.42, rgb: [168, 174, 182], a: 0.18 },
-    { x: 0.55, y: 0.38, r: 0.32, rgb: [182, 174, 162], a: 0.17 },
+    { x: 0.16, y: 0.22, r: 0.44, rgb: [SHADOW_LIGHTEN_CHANNEL(186), SHADOW_LIGHTEN_CHANNEL(178), SHADOW_LIGHTEN_CHANNEL(168)], a: 0.198 },
+    { x: 0.68, y: 0.32, r: 0.4, rgb: [SHADOW_LIGHTEN_CHANNEL(174), SHADOW_LIGHTEN_CHANNEL(180), SHADOW_LIGHTEN_CHANNEL(188)], a: 0.18 },
+    { x: 0.42, y: 0.68, r: 0.46, rgb: [SHADOW_LIGHTEN_CHANNEL(176), SHADOW_LIGHTEN_CHANNEL(184), SHADOW_LIGHTEN_CHANNEL(172)], a: 0.171 },
+    { x: 0.82, y: 0.74, r: 0.36, rgb: [SHADOW_LIGHTEN_CHANNEL(188), SHADOW_LIGHTEN_CHANNEL(178), SHADOW_LIGHTEN_CHANNEL(170)], a: 0.18 },
+    { x: 0.28, y: 0.52, r: 0.42, rgb: [SHADOW_LIGHTEN_CHANNEL(168), SHADOW_LIGHTEN_CHANNEL(174), SHADOW_LIGHTEN_CHANNEL(182)], a: 0.162 },
+    { x: 0.55, y: 0.38, r: 0.32, rgb: [SHADOW_LIGHTEN_CHANNEL(182), SHADOW_LIGHTEN_CHANNEL(174), SHADOW_LIGHTEN_CHANNEL(162)], a: 0.153 },
   ];
 
   for (const wash of washes) {
@@ -1925,7 +1963,7 @@ function drawShadowAmbientWashes(targetCtx) {
 }
 
 function drawGapShadowBoost(targetCtx) {
-  if (width < MOBILE_BREAKPOINT) return;
+  if (width < MOBILE_BREAKPOINT || sceneIdle) return;
 
   for (const patch of gapPatches) {
     drawGapPatch(targetCtx, patch.lightA, patch.lightB, patch);
@@ -2049,7 +2087,8 @@ function blurPass(source, destCtx, destCanvas, amount, extraFilter = '') {
   const dw = destCanvas.width;
   const dh = destCanvas.height;
   destCtx.clearRect(0, 0, dw, dh);
-  const blurPx = amount * renderScale;
+  const tierBlurScale = perfTier >= 3 ? 0.86 : perfTier >= 2 ? 0.92 : 1;
+  const blurPx = amount * renderScale * tierBlurScale;
   destCtx.filter = extraFilter ? `blur(${blurPx}px) ${extraFilter}` : `blur(${blurPx}px)`;
   destCtx.drawImage(source, 0, 0, dw, dh);
   destCtx.filter = 'none';
@@ -2147,8 +2186,8 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
       grad.addColorStop(0.46, `rgba(255,255,255,${alpha * 0.42})`);
       grad.addColorStop(1, 'rgba(255,255,255,0)');
     } else {
-      grad.addColorStop(0, `rgba(152,150,142,${alpha})`);
-      grad.addColorStop(0.5, `rgba(172,170,162,${alpha * 0.38})`);
+      grad.addColorStop(0, `rgba(${SHADOW_LIGHTEN_CHANNEL(152)},${SHADOW_LIGHTEN_CHANNEL(150)},${SHADOW_LIGHTEN_CHANNEL(142)},${alpha})`);
+      grad.addColorStop(0.5, `rgba(${SHADOW_LIGHTEN_CHANNEL(172)},${SHADOW_LIGHTEN_CHANNEL(170)},${SHADOW_LIGHTEN_CHANNEL(162)},${alpha * 0.38})`);
       grad.addColorStop(1, 'rgba(255,255,255,0)');
     }
 
@@ -2168,7 +2207,8 @@ function drawRollFocusShadows(targetCtx, mode = 'mask') {
 
 function drawShadowLayer() {
   const isMobile = width < MOBILE_BREAKPOINT;
-  if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < DESKTOP_SHADOW_FRAME_MS) return;
+  const shadowInterval = isMobile ? 0 : (sceneIdle ? DESKTOP_SHADOW_IDLE_FRAME_MS : DESKTOP_SHADOW_FRAME_MS);
+  if (!isMobile && renderFrame > 1 && lastRenderAt - lastShadowLayerAt < shadowInterval) return;
   lastShadowLayerAt = lastRenderAt;
 
   const w = canvas.width;
@@ -2180,7 +2220,7 @@ function drawShadowLayer() {
   drawGapShadowBoost(shadowRawCtx);
 
   for (const f of foliage) {
-    drawShadowShape(shadowRawCtx, f, getShadowColor(f), isMobile ? 0.92 : 1.34);
+    drawShadowShape(shadowRawCtx, f, getShadowColor(f), isMobile ? 0.83 : 1.21);
   }
 
   shadowRawCtx.globalCompositeOperation = 'destination-out';
@@ -2189,12 +2229,13 @@ function drawShadowLayer() {
 
   applyOrganicShadowEdgeBlend(shadowRawCtx);
   endBufferDraw(shadowRawCtx);
-  blurPass(shadowRawCanvas, shadowCtx, shadowCanvas, isMobile ? BLUR_SHADOW * 1.25 : BLUR_SHADOW);
+  blurPass(shadowRawCanvas, shadowCtx, shadowCanvas, isMobile ? BLUR_SHADOW * 1.15 : BLUR_SHADOW * (perfTier >= 2 ? 0.92 : 1));
 }
 
 function drawLightBokehLayer(time = lastRenderAt) {
   const isMobile = width < MOBILE_BREAKPOINT;
-  if (!isMobile && time - lastBokehUpdateAt < DESKTOP_BOKEH_FRAME_MS) return;
+  const bokehInterval = isMobile ? 0 : (sceneIdle ? DESKTOP_BOKEH_IDLE_FRAME_MS : DESKTOP_BOKEH_FRAME_MS);
+  if (!isMobile && time - lastBokehUpdateAt < bokehInterval) return;
   lastBokehUpdateAt = time;
 
   const w = canvas.width;
@@ -2223,6 +2264,7 @@ function shouldUpdateLightMap(time, recentlyMoved) {
   if (recentlyMoved) return true;
   if (hasRollItems) return time - lastLightMapUpdateAt >= DESKTOP_LIGHT_FRAME_MS;
   if (pointerOnScreen) return time - lastLightMapUpdateAt >= DESKTOP_LIGHT_FRAME_MS;
+  if (sceneIdle) return time - lastLightMapUpdateAt >= DESKTOP_IDLE_LIGHT_FRAME_MS * 1.35;
   return time - lastLightMapUpdateAt >= DESKTOP_IDLE_LIGHT_FRAME_MS;
 }
 
@@ -2310,19 +2352,40 @@ function drawPaperTexture(targetCtx, w, h, alpha = 1) {
   targetCtx.restore();
 }
 
-function drawWall() {
-  const isMobile = width < MOBILE_BREAKPOINT;
-  drawPaperTexture(wallCtx, canvas.width, canvas.height);
-
+function rebuildWallBase() {
+  if (!wallBaseCtx) return;
+  drawPaperTexture(wallBaseCtx, canvas.width, canvas.height);
   if (grainPattern) {
-    wallCtx.fillStyle = grainPattern;
-    wallCtx.globalAlpha = paperTextureReady ? 0.1 : 0.55;
-    wallCtx.fillRect(0, 0, canvas.width, canvas.height);
-    wallCtx.globalAlpha = 1;
+    wallBaseCtx.fillStyle = grainPattern;
+    wallBaseCtx.globalAlpha = paperTextureReady ? 0.1 : 0.55;
+    wallBaseCtx.fillRect(0, 0, canvas.width, canvas.height);
+    wallBaseCtx.globalAlpha = 1;
+  }
+}
+
+function ensureWallBase() {
+  if (
+    wallBaseCanvas &&
+    wallBaseCanvas.width === canvas.width &&
+    wallBaseCanvas.height === canvas.height
+  ) {
+    return;
   }
 
+  const off = createOffscreen(canvas.width, canvas.height);
+  wallBaseCanvas = off.canvas;
+  wallBaseCtx = off.ctx;
+  rebuildWallBase();
+}
+
+function drawWall() {
+  const isMobile = width < MOBILE_BREAKPOINT;
+  ensureWallBase();
+  wallCtx.clearRect(0, 0, canvas.width, canvas.height);
+  wallCtx.drawImage(wallBaseCanvas, 0, 0);
+
   wallCtx.globalCompositeOperation = 'multiply';
-  wallCtx.globalAlpha = isMobile ? 0.64 : 0.78;
+  wallCtx.globalAlpha = isMobile ? SHADOW_WALL_MULTIPLY_MOBILE : SHADOW_WALL_MULTIPLY;
   wallCtx.drawImage(shadowCanvas, 0, 0, canvas.width, canvas.height);
   wallCtx.globalAlpha = 1;
 
@@ -2335,13 +2398,29 @@ function drawWall() {
 
   drawRollFocusShadows(wallCtx, 'wall');
 
-  wallCtx.globalCompositeOperation = 'lighter';
-  wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
-  wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
-  wallCtx.globalAlpha = 1;
+  if (perfTier < 3) {
+    wallCtx.globalCompositeOperation = 'lighter';
+    wallCtx.globalAlpha = isMobile ? 0.12 : Math.min(0.12 + (1 - renderScale) * 0.16, 0.26);
+    wallCtx.drawImage(lightBokehCanvas, 0, 0, canvas.width, canvas.height);
+    wallCtx.globalAlpha = 1;
+  }
+
   wallCtx.globalCompositeOperation = 'source-over';
 
-  drawEdgeWallGlow();
+  if (!sceneIdle || perfTier < 2) drawEdgeWallGlow();
+}
+
+function shouldRedrawWall() {
+  if (hasRollItems) return true;
+  if (lastShadowLayerAt === lastRenderAt) return true;
+  if (lastBokehUpdateAt === lastRenderAt) return true;
+  if (!sceneIdle) return true;
+  return false;
+}
+
+function drawWallIfNeeded() {
+  if (!shouldRedrawWall()) return;
+  drawWall();
 }
 
 function getTextHoverTargetRect(el) {
@@ -2480,8 +2559,28 @@ function drawMaskedText() {
   textCtx.globalCompositeOperation = 'destination-in';
   textCtx.drawImage(lightCanvas, 0, 0);
   textCtx.drawImage(lightCanvas, 0, 0);
-  textCtx.drawImage(lightCanvas, 0, 0);
   textCtx.globalCompositeOperation = 'source-over';
+  lastTextCanvasDrawAt = lastRenderAt;
+}
+
+function shouldRedrawTextCanvas(recentlyMoved, dynamicTextChanged) {
+  if (dynamicTextChanged) return true;
+  if (recentlyMoved || pointerOnScreen) return true;
+  if (hoverTextLight.active || hoverTextLight.opacity > 0.03) return true;
+  if (hasRollItems) return true;
+  if (lastLightMapUpdateAt > lastTextCanvasDrawAt) return true;
+  if (lastShadowLayerAt > lastTextCanvasDrawAt) return true;
+
+  for (const item of textItems) {
+    if (Math.abs(getTextHoverScale(item.sourceEl) - 1) > 0.008) return true;
+  }
+
+  return lastTextCanvasDrawAt < 0;
+}
+
+function drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged) {
+  if (!shouldRedrawTextCanvas(recentlyMoved, dynamicTextChanged)) return;
+  drawMaskedText();
 }
 
 function getRemPx() {
@@ -2500,21 +2599,19 @@ function drawLineRect(rect, alpha = 1, canvasRect = getCanvasRect()) {
 }
 
 function drawMaskedRollLines() {
-  if (!cachedWorkRollEls.length) return;
+  if (!cachedRollLineGroups.length) return;
 
   textCtx.save();
   textCtx.fillStyle = TEXT;
   const canvasRect = getCanvasRect();
 
-  for (const roll of cachedWorkRollEls) {
-    const isOpen = roll.classList.contains('is-open');
-    const lines = roll.querySelectorAll('.roll-line');
+  for (const group of cachedRollLineGroups) {
+    const isOpen = group.roll.classList.contains('is-open');
 
-    lines.forEach((line) => {
-      const lineOpacity = parseFloat(getComputedStyle(line).opacity || '1');
-      const spans = line.querySelectorAll('span');
+    for (const lineData of group.lines) {
+      const lineOpacity = parseFloat(getComputedStyle(lineData.line).opacity || '1');
 
-      spans.forEach((span, index) => {
+      lineData.spans.forEach((span, index) => {
         const spanOpacity = parseFloat(getComputedStyle(span).opacity || '1');
         drawLineRect(span.getBoundingClientRect(), lineOpacity * spanOpacity, canvasRect);
 
@@ -2524,7 +2621,7 @@ function drawMaskedRollLines() {
         const rem = getRemPx();
         const sideWidth = Math.min(2.8 * rem, Math.max(1.9 * rem, window.innerWidth * 0.028));
         const sideGap = 0;
-        const yOffset = line.classList.contains('roll-line--bottom') ? -8 : 5;
+        const yOffset = lineData.isBottom ? -8 : 5;
         const sideHeight = Math.max(rect.height, 1);
 
         drawLineRect({
@@ -2540,7 +2637,7 @@ function drawMaskedRollLines() {
           height: sideHeight,
         }, lineOpacity, canvasRect);
       });
-    });
+    }
   }
 
   textCtx.globalAlpha = 1;
@@ -2682,7 +2779,7 @@ function drawMobileLightMap() {
   lightCtx.globalCompositeOperation = 'source-over';
 }
 
-function renderMobileScene(time) {
+function renderMobileScene(time, recentlyMoved, dynamicTextChanged) {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
   updateWind(time);
@@ -2692,7 +2789,7 @@ function renderMobileScene(time) {
   updateBlobs(time);
   drawMobileBackdrop(time);
   drawMobileLightMap();
-  drawMaskedText();
+  drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
 
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
@@ -2700,6 +2797,11 @@ function renderMobileScene(time) {
 }
 
 function render(time) {
+  if (!pageVisible) {
+    requestAnimationFrame(render);
+    return;
+  }
+
   const targetFrameMs = width < MOBILE_BREAKPOINT ? MOBILE_TARGET_FRAME_MS : 0;
   if (targetFrameMs && time - lastRenderAt < targetFrameMs) {
     requestAnimationFrame(render);
@@ -2713,6 +2815,7 @@ function render(time) {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
   const recentlyMoved = time - lastPointerMove < 120;
+  sceneIdle = !recentlyMoved && !pointerOnScreen && !hasRollItems && !hoverTextLight.active;
 
   smoothMouse.x += (mouse.targetX - smoothMouse.x) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
   smoothMouse.y += (mouse.targetY - smoothMouse.y) * (pointerOnScreen ? (recentlyMoved ? 0.45 : 0.18) : 0.05);
@@ -2725,7 +2828,7 @@ function render(time) {
   updateHoverTextLight(time);
 
   if (width < MOBILE_BREAKPOINT) {
-    renderMobileScene(time);
+    renderMobileScene(time, recentlyMoved, dynamicTextChanged);
     requestAnimationFrame(render);
     return;
   }
@@ -2736,12 +2839,12 @@ function render(time) {
   drawShadowLayer();
   drawLightBokehLayer(time);
   drawLightMap(time, recentlyMoved);
-  drawWall();
-  drawMaskedText();
+  drawWallIfNeeded();
+  drawMaskedTextIfNeeded(recentlyMoved, dynamicTextChanged);
 
   ctx.drawImage(wallCanvas, 0, 0);
   ctx.drawImage(textCanvas, 0, 0);
-  drawTyndallEffect(time);
+  if (!sceneIdle || perfTier < 2) drawTyndallEffect(time);
   drawFrostOverlay();
 
   requestAnimationFrame(render);
@@ -2774,9 +2877,12 @@ resize();
 requestAnimationFrame(render);
 
 window.addEventListener('resize', () => {
-  resize();
-  layoutScatterItems();
-  measureTextItems();
+  window.clearTimeout(resize._t);
+  resize._t = window.setTimeout(() => {
+    resize();
+    layoutScatterItems();
+    measureTextItems();
+  }, 120);
 });
 
 window.addEventListener('scroll', measureTextItems, { passive: true });
@@ -2786,5 +2892,13 @@ document.documentElement.addEventListener('pointerleave', onPointerLeave);
 document.documentElement.addEventListener('touchstart', onPointerMove, { passive: true });
 document.documentElement.addEventListener('touchmove', onPointerMove, { passive: true });
 document.documentElement.addEventListener('touchend', onPointerLeave, { passive: true });
+
+document.addEventListener('visibilitychange', () => {
+  pageVisible = document.visibilityState !== 'hidden';
+  if (pageVisible) {
+    lastTextCanvasDrawAt = -1;
+    wallBaseCanvas = null;
+  }
+});
 
 document.fonts.ready.then(measureTextItems);
