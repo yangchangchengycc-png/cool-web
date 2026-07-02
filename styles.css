@@ -482,6 +482,12 @@ body::before {
   overflow-x: hidden;
   --project-line: 2px;
   --project-line-color: #000;
+  --project-ui-scale: 0.8;
+}
+
+.layout-detail .minimal-nav {
+  transform: scale(var(--project-ui-scale));
+  transform-origin: top right;
 }
 
 body.layout-detail::before {
@@ -512,6 +518,29 @@ body.layout-detail::before {
 .project-media-col,
 .project-info-col {
   pointer-events: auto;
+}
+
+.project-media-col {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.project-col-inner {
+  width: calc(100% / var(--project-ui-scale));
+  transform: scale(var(--project-ui-scale));
+  pointer-events: auto;
+}
+
+.project-col-inner--media {
+  transform-origin: top right;
+}
+
+.project-col-inner--info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  padding-top: clamp(1rem, 4vh, 3rem);
+  transform-origin: top left;
 }
 
 .project-viewer {
@@ -717,11 +746,8 @@ body.layout-detail::before {
 
 .project-info-col {
   display: flex;
-  flex-direction: column;
   justify-content: flex-start;
-  gap: 1.35rem;
   align-self: start;
-  padding-top: clamp(1rem, 4vh, 3rem);
 }
 
 .project-rule {
@@ -1087,7 +1113,19 @@ body.project-lightbox-open {
     padding-top: 5rem;
   }
 
+  .project-media-col {
+    justify-content: flex-start;
+  }
+
+  .project-col-inner--media {
+    transform-origin: top left;
+  }
+
   .project-info-col {
+    padding-top: 0;
+  }
+
+  .project-col-inner--info {
     padding-top: 0;
   }
 
