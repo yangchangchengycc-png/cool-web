@@ -898,8 +898,8 @@ body.layout-detail::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem 2.5rem;
-  background: rgba(239, 239, 236, 0.96);
+  padding: 0.5rem 1.25rem;
+  background: var(--wall);
 }
 
 .project-lightbox[hidden] {
@@ -910,12 +910,16 @@ body.project-lightbox-open {
   overflow: hidden;
 }
 
+body.project-lightbox-open #scene {
+  visibility: hidden;
+}
+
 .project-lightbox__frame {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(calc(100vw - 5rem), 132rem);
-  height: calc(100svh - 2.5rem);
+  width: min(calc(100vw - 2.5rem), 132rem);
+  height: calc(100svh - 1rem);
   max-width: 100%;
   max-height: 100%;
   margin: auto;
