@@ -490,6 +490,7 @@ body.layout-detail::before {
   --project-stroke: 2px solid #000;
   --ps: 0.7;
   --project-width: min(calc(94vw * var(--ps)), calc(112rem * var(--ps)));
+  --project-viewer-head: calc((1.35rem + 0.55rem) * var(--ps));
   position: relative;
   z-index: 6;
   display: flex;
@@ -713,10 +714,10 @@ body.layout-detail::before {
 .project-info-col {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: calc(1.35rem * var(--ps));
-  min-height: 100%;
-  padding-top: calc(clamp(1rem, 4vh, 3rem) * var(--ps));
+  min-height: 0;
+  padding-top: var(--project-viewer-head);
 }
 
 .project-rule {
