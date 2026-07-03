@@ -152,9 +152,13 @@
   function handlePhotoWheel(event) {
     if (currentMode !== 'photo' || !els.lightbox?.hidden) return false;
     const reel = getPhotoReel();
-    if (!reel || reel.scrollHeight <= reel.clientHeight) return false;
+    if (!reel) return false;
+
+    const maxScroll = reel.scrollHeight - reel.clientHeight;
+    if (maxScroll <= 0) return false;
 
     event.preventDefault();
+    event.stopPropagation();
     reel.scrollTop += event.deltaY * PHOTO_WHEEL_DAMPING;
     clampPhotoReelScroll(reel);
     schedulePhotoSync();
@@ -366,14 +370,22 @@
     reel.setAttribute('aria-label', `${project.title} photos`);
 
     items.forEach((item, index) => {
+      const slide = document.createElement('div');
+      slide.className = 'project-stage__slide';
+
       const img = document.createElement('img');
       img.className = 'project-stage__media';
       img.src = item.src;
       img.alt = item.alt || `${project.title} ${index + 1}`;
       img.decoding = 'async';
       img.loading = index === 0 ? 'eager' : 'lazy';
-      reel.appendChild(img);
+      slide.appendChild(img);
+      reel.appendChild(slide);
     });
+
+    reel.addEventListener('wheel', (event) => {
+      handlePhotoWheel(event);
+    }, { passive: false });
 
     els.stage.appendChild(reel);
     reel.addEventListener('scroll', schedulePhotoSync, { passive: true });
@@ -617,11 +629,12 @@
     if (event.key === 'ArrowDown') stepLightbox(1);
   });
 
-  els.statementScroll?.addEventListener('scroll', scheduleStatementSync, { passive: true });
-
-  els.viewer?.addEventListener('wheel', (event) => {
+  els.stageWrap?.addEventListener('wheel', (event) => {
+    if (!event.target.closest('.project-stage')) return;
     handlePhotoWheel(event);
-  }, { passive: false });
+  }, { passive: false, capture: true });
+
+  els.statementScroll?.addEventListener('scroll', scheduleStatementSync, { passive: true });
 
   els.info?.addEventListener('wheel', (event) => {
     const scrollEl = els.statementScroll;
