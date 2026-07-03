@@ -1080,12 +1080,8 @@ body.project-lightbox-open {
 
   .project-layout {
     width: min(96vw, 112rem);
-  }
-
-  .project-layout {
     grid-template-columns: 1fr;
     gap: 2.5rem;
-    padding-top: 5rem;
   }
 
   .project-info-col {
