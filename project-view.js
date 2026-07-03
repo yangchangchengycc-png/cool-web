@@ -35,6 +35,12 @@
   let touchStartY = 0;
   let statementSyncFrame = 0;
   let photoSyncFrame = 0;
+  let lightboxWheelAccum = 0;
+  let lightboxWheelLock = false;
+
+  const PHOTO_WHEEL_DAMPING = 0.38;
+  const LIGHTBOX_WHEEL_THRESHOLD = 140;
+  const LIGHTBOX_WHEEL_COOLDOWN_MS = 520;
 
   function getSlug() {
     return window.location.hash.replace('#', '') || 'precarious-force';
@@ -90,7 +96,7 @@
     const items = getMediaList(getProject(), 'photo');
     if (!items.length) return;
 
-    mediaIndex = ((index % items.length) + items.length) % items.length;
+    mediaIndex = Math.min(items.length - 1, Math.max(0, index));
     const pageHeight = reel.clientHeight;
     if (!pageHeight) return;
 
@@ -98,6 +104,28 @@
       top: mediaIndex * pageHeight,
       behavior,
     });
+    updatePhotoNavState();
+  }
+
+  function updatePhotoNavState() {
+    const items = getMediaList(getProject(), 'photo');
+    const lastIndex = Math.max(0, items.length - 1);
+    const multi = items.length > 1;
+
+    if (els.prev) {
+      els.prev.hidden = currentMode !== 'photo';
+      els.prev.disabled = !multi || mediaIndex <= 0;
+    }
+    if (els.next) {
+      els.next.hidden = currentMode !== 'photo';
+      els.next.disabled = !multi || mediaIndex >= lastIndex;
+    }
+    if (els.lightboxPrev) {
+      els.lightboxPrev.disabled = !multi || mediaIndex <= 0;
+    }
+    if (els.lightboxNext) {
+      els.lightboxNext.disabled = !multi || mediaIndex >= lastIndex;
+    }
   }
 
   function syncPhotoIndexFromReel() {
@@ -113,6 +141,47 @@
       items.length - 1,
       Math.max(0, Math.round(reel.scrollTop / pageHeight)),
     );
+    updatePhotoNavState();
+  }
+
+  function clampPhotoReelScroll(reel) {
+    const maxScroll = reel.scrollHeight - reel.clientHeight;
+    reel.scrollTop = Math.max(0, Math.min(maxScroll, reel.scrollTop));
+  }
+
+  function handlePhotoWheel(event) {
+    if (currentMode !== 'photo' || !els.lightbox?.hidden) return false;
+    const reel = getPhotoReel();
+    if (!reel || reel.scrollHeight <= reel.clientHeight) return false;
+
+    event.preventDefault();
+    reel.scrollTop += event.deltaY * PHOTO_WHEEL_DAMPING;
+    clampPhotoReelScroll(reel);
+    schedulePhotoSync();
+    return true;
+  }
+
+  function handleLightboxWheel(event) {
+    if (els.lightbox?.hidden) return;
+
+    event.preventDefault();
+    if (lightboxWheelLock) return;
+
+    lightboxWheelAccum += event.deltaY;
+    if (Math.abs(lightboxWheelAccum) < LIGHTBOX_WHEEL_THRESHOLD) return;
+
+    const delta = lightboxWheelAccum > 0 ? 1 : -1;
+    lightboxWheelAccum = 0;
+
+    const items = getPhotoItems();
+    const nextIndex = mediaIndex + delta;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
+
+    lightboxWheelLock = true;
+    stepLightbox(delta);
+    window.setTimeout(() => {
+      lightboxWheelLock = false;
+    }, LIGHTBOX_WHEEL_COOLDOWN_MS);
   }
 
   function schedulePhotoSync() {
@@ -263,14 +332,8 @@
     const isPhoto = currentMode === 'photo';
     const isVideo = currentMode === 'video';
 
-    if (els.prev) {
-      els.prev.hidden = !isPhoto;
-      els.prev.disabled = !isPhoto || photos.length <= 1;
-    }
-    if (els.next) {
-      els.next.hidden = !isPhoto;
-      els.next.disabled = !isPhoto || photos.length <= 1;
-    }
+    if (els.prev) els.prev.hidden = !isPhoto;
+    if (els.next) els.next.hidden = !isPhoto;
     if (els.expand) {
       els.expand.hidden = !isPhoto || photos.length === 0;
     }
@@ -281,6 +344,7 @@
 
     els.stageWrap?.classList.toggle('is-video-mode', isVideo && videos.length > 0);
     els.stageWrap?.classList.toggle('is-photo-mode', isPhoto && photos.length > 0);
+    updatePhotoNavState();
   }
 
   function renderPhotoStage(project) {
@@ -409,7 +473,9 @@
     if (currentMode !== 'photo') return;
     const items = getMediaList(getProject(), 'photo');
     if (items.length <= 1) return;
-    scrollPhotoReelTo(mediaIndex + delta, 'smooth');
+    const nextIndex = mediaIndex + delta;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
+    scrollPhotoReelTo(nextIndex, 'smooth');
   }
 
   function playVideo() {
@@ -461,10 +527,8 @@
     els.lightbox.hidden = false;
     els.lightbox.setAttribute('aria-hidden', 'false');
     document.body.classList.add('project-lightbox-open');
-
-    const multi = items.length > 1;
-    if (els.lightboxPrev) els.lightboxPrev.disabled = !multi;
-    if (els.lightboxNext) els.lightboxNext.disabled = !multi;
+    lightboxWheelAccum = 0;
+    updatePhotoNavState();
   }
 
   function closeLightbox() {
@@ -472,22 +536,36 @@
     els.lightbox.hidden = true;
     els.lightbox.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('project-lightbox-open');
-    if (els.lightboxImage) els.lightboxImage.src = '';
+    lightboxWheelAccum = 0;
+    lightboxWheelLock = false;
+    if (els.lightboxImage) {
+      els.lightboxImage.style.opacity = '';
+      els.lightboxImage.src = '';
+    }
   }
 
   function stepLightbox(delta) {
     const items = getPhotoItems();
     if (items.length <= 1 || !els.lightboxImage) return;
-    mediaIndex = (mediaIndex + delta + items.length) % items.length;
-    const item = items[mediaIndex];
-    els.lightboxImage.src = item.src;
-    els.lightboxImage.alt = item.alt || getProject().title;
 
-    const img = getPhotoReel()?.querySelectorAll('.project-stage__media')[mediaIndex];
-    if (img instanceof HTMLImageElement) {
-      img.src = item.src;
-      img.alt = item.alt || getProject().title;
-    }
+    const nextIndex = mediaIndex + delta;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
+
+    mediaIndex = nextIndex;
+    const item = items[mediaIndex];
+
+    els.lightboxImage.style.opacity = '0';
+    window.setTimeout(() => {
+      els.lightboxImage.src = item.src;
+      els.lightboxImage.alt = item.alt || getProject().title;
+      els.lightboxImage.onload = () => {
+        els.lightboxImage.style.opacity = '1';
+      };
+      if (els.lightboxImage.complete) els.lightboxImage.style.opacity = '1';
+    }, 180);
+
+    scrollPhotoReelTo(mediaIndex, 'smooth');
+    updatePhotoNavState();
   }
 
   els.tabs.forEach((tab) => {
@@ -524,14 +602,13 @@
     const touchEndY = event.changedTouches[0]?.clientY ?? 0;
     const deltaY = touchStartY - touchEndY;
     if (Math.abs(deltaY) < 40) return;
-    stepLightbox(deltaY > 0 ? 1 : -1);
+    const delta = deltaY > 0 ? 1 : -1;
+    const nextIndex = mediaIndex + delta;
+    if (nextIndex < 0 || nextIndex >= getPhotoItems().length) return;
+    stepLightbox(delta);
   }, { passive: true });
 
-  els.lightbox?.addEventListener('wheel', (event) => {
-    if (els.lightbox.hidden) return;
-    event.preventDefault();
-    stepLightbox(event.deltaY > 0 ? 1 : -1);
-  }, { passive: false });
+  els.lightbox?.addEventListener('wheel', handleLightboxWheel, { passive: false });
 
   window.addEventListener('keydown', (event) => {
     if (els.lightbox?.hidden) return;
@@ -543,15 +620,7 @@
   els.statementScroll?.addEventListener('scroll', scheduleStatementSync, { passive: true });
 
   els.viewer?.addEventListener('wheel', (event) => {
-    if (currentMode !== 'photo') return;
-    const reel = getPhotoReel();
-    if (!reel || reel.scrollHeight <= reel.clientHeight) return;
-    event.preventDefault();
-    reel.scrollTop = Math.max(
-      0,
-      Math.min(reel.scrollHeight - reel.clientHeight, reel.scrollTop + event.deltaY),
-    );
-    schedulePhotoSync();
+    handlePhotoWheel(event);
   }, { passive: false });
 
   els.info?.addEventListener('wheel', (event) => {

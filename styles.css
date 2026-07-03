@@ -592,7 +592,7 @@ body.layout-detail::before {
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   scroll-snap-type: y proximity;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -937,6 +937,7 @@ body.project-lightbox-open {
   height: auto;
   object-fit: contain;
   border: var(--project-stroke);
+  transition: opacity 220ms ease;
 }
 
 .layout-work {
