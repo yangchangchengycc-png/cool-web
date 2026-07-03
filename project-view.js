@@ -138,7 +138,7 @@
 
     wrap.hidden = false;
     const trackHeight = wrap.clientHeight;
-    const thumbHeight = trackHeight * 0.25;
+    const thumbHeight = trackHeight * 0.125;
     const travel = trackHeight - thumbHeight;
     const top = (scrollEl.scrollTop / maxScroll) * travel;
 

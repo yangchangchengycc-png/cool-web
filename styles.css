@@ -779,7 +779,7 @@ body.layout-detail::before {
   flex: 0 0 var(--project-statement-progress-width);
   width: var(--project-statement-progress-width);
   height: 100%;
-  background: rgba(0, 0, 0, 0.14);
+  background: transparent;
 }
 
 .project-statement-progress[hidden] {
@@ -789,10 +789,10 @@ body.layout-detail::before {
 
 .project-statement-progress__thumb {
   position: absolute;
-  left: 0;
+  left: -2px;
   top: 0;
   width: 100%;
-  height: 25%;
+  height: 12.5%;
   background: #000;
   will-change: transform;
 }
