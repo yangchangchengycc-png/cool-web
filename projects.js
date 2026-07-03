@@ -7,7 +7,7 @@ window.PROJECT_PAGES = {
     slug: 'precarious-force',
     title: 'precarious force',
     statement:
-      'The horizontal lever symbolizes the essence of balance, a concept embodied by the scales held by the goddess of justice. In this artwork, however, the unbalanced appearance of the lever challenges this notion, prompting us to reconsider our intuitive understanding. Stereotypes often stem from these intuitive associations we make between groups and their perceived traits, shaped by everyday experiences. By confronting viewers with this unconventional portrayal, the artwork invites introspection into the passive formation of stereotypes. Moreover, feathers are introduced as a subtle yet dynamic element, highlighting the instability inherent in our fixed perceptions.',
+      'Using balance as the primary language, this artwork explores the conflict between the weight of reality and the lightness of ideals. Like the classical imagery of the goddess of justice, balance here does not settle contradictions, but exposes their coexistence. A feather is chosen not merely for its lightness, but for the specific weight it represents\u2014appearing close to the earth while pointing toward the sky, it operates along the fault line between lightness and heaviness, ideal and reality, visible forces and hidden systems.',
     materials: 'Acrylic. Metal. Step motor. Feather',
     dimensions: '3m x 0.2m x 0.4m',
     year: '2022',
@@ -75,14 +75,12 @@ window.PROJECT_PAGES = {
     slug: 'river',
     title: 'you can\u2019t step into the same river twice',
     statement:
-      'A related study in change, repetition, and the impossibility of returning to the same moment twice.',
+      'A work about change, flow, and the impossibility of returning to the same moment twice.',
     materials: 'TBD',
     dimensions: 'TBD',
     year: 'TBD',
     media: {
-      photo: [
-        { src: '../assets/projects/precarious-force-hero.jpg', alt: 'you can\u2019t step into the same river twice' },
-      ],
+      photo: [{ src: '../assets/projects/precarious-force-hero.jpg', alt: 'you can\u2019t step into the same river twice placeholder' }],
       video: [],
     },
   },
