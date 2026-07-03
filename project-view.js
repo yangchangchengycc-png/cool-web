@@ -38,7 +38,6 @@
   let lightboxWheelAccum = 0;
   let lightboxWheelLock = false;
 
-  const PHOTO_WHEEL_DAMPING = 0.38;
   const LIGHTBOX_WHEEL_THRESHOLD = 140;
   const LIGHTBOX_WHEEL_COOLDOWN_MS = 520;
 
@@ -144,25 +143,30 @@
     updatePhotoNavState();
   }
 
-  function clampPhotoReelScroll(reel) {
-    const maxScroll = reel.scrollHeight - reel.clientHeight;
-    reel.scrollTop = Math.max(0, Math.min(maxScroll, reel.scrollTop));
-  }
+  function bindPhotoReelGestures(reel) {
+    let touchStartY = 0;
+    let touchStartScrollTop = 0;
 
-  function handlePhotoWheel(event) {
-    if (currentMode !== 'photo' || !els.lightbox?.hidden) return false;
-    const reel = getPhotoReel();
-    if (!reel) return false;
+    reel.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1) return;
+      touchStartY = event.touches[0].clientY;
+      touchStartScrollTop = reel.scrollTop;
+    }, { passive: true });
 
-    const maxScroll = reel.scrollHeight - reel.clientHeight;
-    if (maxScroll <= 0) return false;
+    reel.addEventListener('touchend', (event) => {
+      if (currentMode !== 'photo' || !els.lightbox?.hidden) return;
+      const touchEndY = event.changedTouches[0]?.clientY ?? touchStartY;
+      const deltaY = touchStartY - touchEndY;
+      const pageHeight = reel.clientHeight;
+      if (!pageHeight || Math.abs(deltaY) < 36) return;
 
-    event.preventDefault();
-    event.stopPropagation();
-    reel.scrollTop += event.deltaY * PHOTO_WHEEL_DAMPING;
-    clampPhotoReelScroll(reel);
-    schedulePhotoSync();
-    return true;
+      const maxScroll = reel.scrollHeight - reel.clientHeight;
+      const atTop = touchStartScrollTop <= 1;
+      const atBottom = touchStartScrollTop >= maxScroll - 1;
+
+      if (deltaY > 0 && atBottom) stepPhoto(1);
+      else if (deltaY < 0 && atTop) stepPhoto(-1);
+    }, { passive: true });
   }
 
   function handleLightboxWheel(event) {
@@ -383,12 +387,9 @@
       reel.appendChild(slide);
     });
 
-    reel.addEventListener('wheel', (event) => {
-      handlePhotoWheel(event);
-    }, { passive: false });
-
     els.stage.appendChild(reel);
     reel.addEventListener('scroll', schedulePhotoSync, { passive: true });
+    bindPhotoReelGestures(reel);
     requestAnimationFrame(() => scrollPhotoReelTo(mediaIndex));
   }
 
@@ -628,11 +629,6 @@
     if (event.key === 'ArrowUp') stepLightbox(-1);
     if (event.key === 'ArrowDown') stepLightbox(1);
   });
-
-  els.stageWrap?.addEventListener('wheel', (event) => {
-    if (!event.target.closest('.project-stage')) return;
-    handlePhotoWheel(event);
-  }, { passive: false, capture: true });
 
   els.statementScroll?.addEventListener('scroll', scheduleStatementSync, { passive: true });
 

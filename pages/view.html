@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portfolio — Project</title>
-  <link rel="stylesheet" href="../styles.css?v=20260703-1720">
+  <link rel="stylesheet" href="../styles.css?v=20260703-1725">
 </head>
 <body class="layout-detail">
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -80,7 +80,9 @@
     <button type="button" class="project-lightbox__nav project-lightbox__nav--prev" id="project-lightbox-prev" aria-label="Previous image">
       <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 9L7 1L13 9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
     </button>
-    <img class="project-lightbox__image" id="project-lightbox-image" alt="">
+    <div class="project-lightbox__frame">
+      <img class="project-lightbox__image" id="project-lightbox-image" alt="">
+    </div>
     <button type="button" class="project-lightbox__nav project-lightbox__nav--next" id="project-lightbox-next" aria-label="Next image">
       <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M1 1L7 9L13 1" fill="none" stroke="currentColor" stroke-width="2"/></svg>
     </button>
@@ -89,6 +91,6 @@
   <script src="../projects.js?v=20260703-1708" defer></script>
   <script src="../logo.js?v=20260702-1900" defer></script>
   <script src="../main.js?v=20260620-2200" defer></script>
-  <script src="../project-view.js?v=20260703-1720" defer></script>
+  <script src="../project-view.js?v=20260703-1725" defer></script>
 </body>
 </html>
