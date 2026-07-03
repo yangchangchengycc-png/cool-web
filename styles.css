@@ -893,13 +893,13 @@ body.layout-detail::before {
 .project-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 100;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1.25rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
   background: var(--wall);
+  isolation: isolate;
 }
 
 .project-lightbox[hidden] {
@@ -908,41 +908,44 @@ body.layout-detail::before {
 
 body.project-lightbox-open {
   overflow: hidden;
+  background: var(--wall);
 }
 
-body.project-lightbox-open #scene {
+body.project-lightbox-open > :not(.project-lightbox) {
   visibility: hidden;
 }
 
 .project-lightbox__frame {
+  position: absolute;
+  inset:
+    clamp(1rem, 2.5vh, 1.5rem)
+    clamp(2.75rem, 5vw, 4rem);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(calc(100vw - 2.5rem), 132rem);
-  height: calc(100svh - 1rem);
-  max-width: 100%;
-  max-height: 100%;
-  margin: auto;
+  box-sizing: border-box;
+  pointer-events: none;
 }
 
 .project-lightbox__close {
   position: absolute;
   top: 1.25rem;
   right: 1.5rem;
-  z-index: 2;
+  z-index: 3;
   border: 0;
   background: transparent;
   font-size: 2rem;
   line-height: 1;
   color: rgba(0, 0, 0, 0.72);
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .project-lightbox__nav {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 2;
+  z-index: 3;
   display: grid;
   place-items: center;
   width: 2.4rem;
@@ -951,6 +954,7 @@ body.project-lightbox-open #scene {
   background: transparent;
   color: rgba(0, 0, 0, 0.82);
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .project-lightbox__nav--prev {
@@ -974,7 +978,9 @@ body.project-lightbox-open #scene {
   max-height: 100%;
   object-fit: contain;
   object-position: center center;
+  margin: auto;
   border: var(--project-stroke);
+  pointer-events: auto;
   transition: opacity 220ms ease;
 }
 
