@@ -894,10 +894,12 @@ body.layout-detail::before {
   position: fixed;
   inset: 0;
   z-index: 40;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(2rem, 4vh, 3rem) clamp(3.5rem, 6vw, 5rem);
+  padding: clamp(1rem, 2.5vh, 2rem) clamp(2rem, 4vw, 3.5rem);
+  overflow: hidden;
   background: rgba(239, 239, 236, 0.96);
 }
 
@@ -917,6 +919,7 @@ body.project-lightbox-open {
   height: 100%;
   min-width: 0;
   min-height: 0;
+  margin: auto;
 }
 
 .project-lightbox__close {
@@ -967,7 +970,10 @@ body.project-lightbox-open {
   width: auto;
   height: auto;
   object-fit: contain;
+  object-position: center center;
   border: var(--project-stroke);
+  transform: scale(1.2);
+  transform-origin: center center;
   transition: opacity 220ms ease;
 }
 
