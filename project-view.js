@@ -79,37 +79,26 @@
 
     if (project.contact) {
       const contact = document.createElement('p');
-      contact.className = 'project-contact-line';
+      contact.className = 'project-meta__line';
       contact.innerHTML = `<span class="project-meta__label">Email</span> ${project.contact}`;
       els.meta.appendChild(contact);
       return;
     }
 
-    const rows = [
-      ['Materials', project.materials],
-      ['Dimensions', project.dimensions],
-      ['Year', project.year],
-    ].filter(([, value]) => value);
+    const lines = [project.materials, project.dimensions, project.year].filter(Boolean);
 
-    if (!rows.length) {
+    if (!lines.length) {
       els.meta.hidden = true;
       return;
     }
 
     els.meta.hidden = false;
-    const dl = document.createElement('dl');
-    dl.className = 'project-meta__list';
-
-    rows.forEach(([label, value]) => {
-      const dt = document.createElement('dt');
-      dt.textContent = label;
-      const dd = document.createElement('dd');
-      dd.textContent = value;
-      dl.appendChild(dt);
-      dl.appendChild(dd);
+    lines.forEach((line) => {
+      const row = document.createElement('p');
+      row.className = 'project-meta__line';
+      row.textContent = line;
+      els.meta.appendChild(row);
     });
-
-    els.meta.appendChild(dl);
   }
 
   function stopYouTube() {

@@ -482,10 +482,26 @@ body::before {
   overflow-x: hidden;
   --project-line: 2px;
   --project-line-color: #000;
-  --project-ui-scale: 0.512;
-  --project-nav-height: 1.35rem;
-  --project-viewer-gap: 0.55rem;
-  --project-stage-top: calc(var(--project-nav-height) + var(--project-viewer-gap));
+  --pdf-w: 1920;
+  --pdf-h: 1080;
+  --project-ui: min(100vw / var(--pdf-w), 100vh / var(--pdf-h));
+  --pdf-content-top: 391;
+  --pdf-media-w: 856;
+  --pdf-info-w: 424;
+  --pdf-gap: 50;
+  --pdf-stage-h: 349;
+  --pdf-viewer-gap: 5.5;
+  --pdf-nav-h: 15.6;
+  --pdf-controls-h: 24;
+  --pdf-title-box-w: 365;
+  --pdf-tab-w: 52;
+  --pdf-statement-size: 12;
+  --pdf-statement-leading: 15.6;
+  --pdf-meta-size: 12;
+  --pdf-meta-leading: 16.2;
+  --pdf-label-size: 12;
+  --pdf-info-gap: 22.5;
+  --pdf-rule-dash-w: 37.6;
 }
 
 body.layout-detail::before {
@@ -496,58 +512,59 @@ body.layout-detail::before {
   position: relative;
   z-index: 6;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: flex-start;
   box-sizing: border-box;
   min-height: 100vh;
   min-height: 100svh;
   padding:
-    clamp(4.5rem, 10vh, 6rem)
-    clamp(1.5rem, 3.5vw, 3.5rem);
+    calc(var(--pdf-content-top) * var(--project-ui))
+    calc(((var(--pdf-w) - var(--pdf-media-w) - var(--pdf-gap) - var(--pdf-info-w)) / 2) * var(--project-ui))
+    calc(((var(--pdf-h) - 727.4) / 2) * var(--project-ui));
   pointer-events: none;
 }
 
-.project-layout-shell {
-  zoom: var(--project-ui-scale);
-  width: min(calc(94vw / var(--project-ui-scale)), calc(112rem / var(--project-ui-scale)));
-  pointer-events: auto;
-}
-
 .project-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
-  gap: clamp(2rem, 4.5vw, 4.5rem);
-  align-items: start;
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: calc(var(--pdf-gap) * var(--project-ui));
+  width: max-content;
+  max-width: 100%;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .project-media-col,
 .project-info-col {
   pointer-events: auto;
+  flex: 0 0 auto;
+}
+
+.project-media-col {
+  width: calc(var(--pdf-media-w) * var(--project-ui));
+  max-width: calc(var(--pdf-media-w) * var(--project-ui));
 }
 
 .project-info-col {
-  display: flex;
-  flex-direction: column;
-  gap: 1.35rem;
-  padding-top: var(--project-stage-top);
-  align-self: start;
+  width: calc(var(--pdf-info-w) * var(--project-ui));
+  max-width: calc(var(--pdf-info-w) * var(--project-ui));
 }
 
 .project-viewer {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto auto;
   justify-items: center;
-  gap: var(--project-viewer-gap);
+  gap: calc(var(--pdf-viewer-gap) * var(--project-ui));
 }
 
 .project-nav {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: var(--project-nav-height);
+  width: calc(14 * var(--project-ui));
+  height: calc(var(--pdf-nav-h) * var(--project-ui));
   padding: 0;
   border: 0;
   background: transparent;
@@ -579,7 +596,7 @@ body.layout-detail::before {
 .project-stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 1.55 / 1;
+  height: calc(var(--pdf-stage-h) * var(--project-ui));
   border: var(--project-line) solid var(--project-line-color);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
@@ -591,7 +608,7 @@ body.layout-detail::before {
 }
 
 .project-stage__empty {
-  font-size: calc(0.82rem + 1px);
+  font-size: calc(var(--pdf-meta-size) * var(--project-ui));
   font-weight: 500;
   color: rgba(0, 0, 0, 0.42);
 }
@@ -639,8 +656,8 @@ body.layout-detail::before {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 3.4rem;
-  height: 3.4rem;
+  width: calc(34 * var(--project-ui));
+  height: calc(34 * var(--project-ui));
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.72);
@@ -660,10 +677,10 @@ body.layout-detail::before {
 
 .project-expand {
   position: absolute;
-  right: 0.72rem;
-  bottom: 0.72rem;
-  width: 1.65rem;
-  height: 1.65rem;
+  right: calc(7.2 * var(--project-ui));
+  bottom: calc(7.2 * var(--project-ui));
+  width: calc(16.5 * var(--project-ui));
+  height: calc(16.5 * var(--project-ui));
   border: 0;
   background: transparent;
   color: rgba(0, 0, 0, 0.72);
@@ -683,20 +700,24 @@ body.layout-detail::before {
 
 .project-controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns:
+    calc(var(--pdf-title-box-w) * var(--project-ui))
+    calc(var(--pdf-tab-w) * var(--project-ui))
+    calc(var(--pdf-tab-w) * var(--project-ui))
+    minmax(0, 1fr);
   width: 100%;
-  margin-top: 0.35rem;
+  margin-top: calc(var(--pdf-viewer-gap) * var(--project-ui));
   border: var(--project-line) solid var(--project-line-color);
 }
 
 .project-title-box,
 .project-tab {
-  min-height: 2.35rem;
+  min-height: calc(var(--pdf-controls-h) * var(--project-ui));
   border: 0;
   border-right: var(--project-line) solid var(--project-line-color);
   background: transparent;
   font-family: var(--font-ui);
-  font-size: calc(clamp(0.72rem, 0.95vw, 0.86rem) + 1px);
+  font-size: calc(var(--pdf-label-size) * var(--project-ui));
   font-weight: 500;
   line-height: 1.25;
   color: rgba(0, 0, 0, 0.82);
@@ -705,13 +726,17 @@ body.layout-detail::before {
 .project-title-box {
   display: flex;
   align-items: center;
-  padding: 0.55rem 0.9rem;
+  padding:
+    0
+    calc(9 * var(--project-ui));
   text-transform: lowercase;
 }
 
 .project-tab {
-  min-width: 5.5rem;
-  padding: 0.55rem 1rem;
+  min-width: 0;
+  padding:
+    0
+    calc(8 * var(--project-ui));
   cursor: pointer;
   background: rgba(255, 255, 255, 0.42);
   color: rgba(0, 0, 0, 0.48);
@@ -737,11 +762,20 @@ body.layout-detail::before {
   cursor: pointer;
 }
 
+.project-info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: calc(var(--pdf-info-gap) * var(--project-ui));
+  align-self: start;
+  padding-top: 0;
+}
+
 .project-rule {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
+  gap: calc(4.5 * var(--project-ui));
 }
 
 .project-rule::before {
@@ -759,8 +793,8 @@ body.layout-detail::before {
 }
 
 .project-rule__dash {
-  width: 2.35rem;
-  height: 4px;
+  width: calc(var(--pdf-rule-dash-w) * var(--project-ui));
+  height: calc(4 * var(--project-ui));
   background: rgba(0, 0, 0, 0.88);
 }
 
@@ -773,9 +807,9 @@ body.layout-detail::before {
 }
 
 .project-statement {
-  font-size: calc(clamp(0.78rem, 0.95vw, 0.92rem) + 1px);
+  font-size: calc(var(--pdf-statement-size) * var(--project-ui));
   font-weight: 500;
-  line-height: 1.65;
+  line-height: calc(var(--pdf-statement-leading) / var(--pdf-statement-size));
   text-align: justify;
   color: rgba(0, 0, 0, 0.78);
 }
@@ -783,30 +817,26 @@ body.layout-detail::before {
 .project-label {
   display: inline-block;
   align-self: flex-start;
-  padding: 0.22rem 0.62rem;
+  padding:
+    calc(2.2 * var(--project-ui))
+    calc(6.2 * var(--project-ui));
   border: var(--project-line) solid var(--project-line-color);
-  font-size: calc(0.78rem + 1px);
+  font-size: calc(var(--pdf-label-size) * var(--project-ui));
   font-weight: 600;
   line-height: 1.2;
   color: rgba(0, 0, 0, 0.82);
 }
 
-.project-meta__list {
+.project-meta {
   display: grid;
-  gap: 0.55rem;
+  gap: calc(2 * var(--project-ui));
 }
 
-.project-meta__list dt {
-  font-size: calc(clamp(0.78rem, 0.92vw, 0.88rem) + 1px);
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.82);
-}
-
-.project-meta__list dd {
+.project-meta__line {
   margin: 0;
-  font-size: calc(clamp(0.76rem, 0.88vw, 0.86rem) + 1px);
+  font-size: calc(var(--pdf-meta-size) * var(--project-ui));
   font-weight: 500;
-  line-height: 1.45;
+  line-height: calc(var(--pdf-meta-leading) / var(--pdf-meta-size));
   color: rgba(0, 0, 0, 0.52);
 }
 
@@ -1094,16 +1124,29 @@ body.project-lightbox-open {
 }
 
 @media (max-width: 900px) {
-  .project-layout-shell {
-    width: min(calc(100% / var(--project-ui-scale)), calc(94vw / var(--project-ui-scale)));
+  .layout-detail {
+    --project-ui: min(100vw / var(--pdf-w), 100vh / var(--pdf-h));
+  }
+
+  .project-page {
+    padding-inline: calc(20 * var(--project-ui));
   }
 
   .project-layout {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--pdf-gap) * var(--project-ui));
+    width: 100%;
+  }
+
+  .project-media-col,
+  .project-info-col {
+    width: min(calc(var(--pdf-media-w) * var(--project-ui)), 100%);
+    max-width: 100%;
   }
 
   .project-info-col {
+    width: min(calc(var(--pdf-info-w) * var(--project-ui)), 100%);
     padding-top: 0;
   }
 
