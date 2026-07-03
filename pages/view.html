@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portfolio — Project</title>
-  <link rel="stylesheet" href="../styles.css?v=20260703-1631">
+  <link rel="stylesheet" href="../styles.css?v=20260703-1636">
 </head>
 <body class="layout-detail">
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -55,8 +55,13 @@
           <span class="project-rule__dash"></span>
         </div>
 
-        <div class="project-statement-scroll" id="project-statement-scroll" tabindex="0" aria-label="Project description">
-          <div class="project-statement" id="project-statement"></div>
+        <div class="project-statement-panel">
+          <div class="project-statement-scroll" id="project-statement-scroll" tabindex="0" aria-label="Project description">
+            <div class="project-statement" id="project-statement"></div>
+          </div>
+          <div class="project-statement-progress" id="project-statement-progress-wrap" aria-hidden="true">
+            <span class="project-statement-progress__thumb" id="project-statement-progress"></span>
+          </div>
         </div>
 
         <div class="project-rule project-rule--bottom" aria-hidden="true">
@@ -84,6 +89,6 @@
   <script src="../projects.js?v=20260703-1631" defer></script>
   <script src="../logo.js?v=20260702-1900" defer></script>
   <script src="../main.js?v=20260620-2200" defer></script>
-  <script src="../project-view.js?v=20260703-1631" defer></script>
+  <script src="../project-view.js?v=20260703-1636" defer></script>
 </body>
 </html>

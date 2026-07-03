@@ -492,7 +492,8 @@ body.layout-detail::before {
   --project-width: min(calc(94vw * var(--ps)), calc(112rem * var(--ps)));
   --project-viewer-head: calc((1.35rem + 0.55rem) * var(--ps));
   --project-statement-size: calc((clamp(0.78rem, 0.95vw, 0.92rem) + 1px) * var(--ps));
-  --project-statement-scroll-height: calc(var(--project-statement-size) * 1.65 * 10.5);
+  --project-statement-scroll-height: calc(var(--project-statement-size) * 1.65 * 10);
+  --project-statement-progress-width: calc(2px * var(--ps));
   position: relative;
   z-index: 6;
   display: flex;
@@ -750,19 +751,50 @@ body.layout-detail::before {
   order: 2;
 }
 
-.project-statement-scroll {
-  flex-shrink: 0;
+.project-statement-panel {
+  display: flex;
+  align-items: stretch;
+  gap: calc(0.55rem * var(--ps));
   height: var(--project-statement-scroll-height);
-  max-height: var(--project-statement-scroll-height);
+  flex-shrink: 0;
+}
+
+.project-statement-scroll {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
 .project-statement-scroll::-webkit-scrollbar {
   display: none;
+}
+
+.project-statement-progress {
+  position: relative;
+  flex: 0 0 var(--project-statement-progress-width);
+  width: var(--project-statement-progress-width);
+  height: 100%;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.project-statement-progress[hidden] {
+  display: block;
+  visibility: hidden;
+}
+
+.project-statement-progress__thumb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  background: #000;
+  will-change: transform;
 }
 
 .project-statement {
@@ -776,6 +808,8 @@ body.layout-detail::before {
 
 .project-statement p {
   margin: 0 0 calc(0.75rem * var(--ps));
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .project-statement p:last-child {

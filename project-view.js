@@ -19,6 +19,8 @@
     viewer: document.getElementById('project-viewer'),
     info: document.getElementById('project-info'),
     statementScroll: document.getElementById('project-statement-scroll'),
+    statementProgress: document.getElementById('project-statement-progress'),
+    statementProgressWrap: document.getElementById('project-statement-progress-wrap'),
     lightbox: document.getElementById('project-lightbox'),
     lightboxImage: document.getElementById('project-lightbox-image'),
     lightboxPrev: document.getElementById('project-lightbox-prev'),
@@ -88,6 +90,115 @@
         paragraph.textContent = part;
         els.statement.appendChild(paragraph);
       });
+    requestAnimationFrame(() => {
+      syncStatementScroll();
+    });
+  }
+
+  function getStatementParagraphs() {
+    return els.statement ? [...els.statement.querySelectorAll('p')] : [];
+  }
+
+  function getStatementSnapPositions() {
+    const scrollEl = els.statementScroll;
+    if (!scrollEl) return [0];
+
+    const paragraphs = getStatementParagraphs();
+    const maxScroll = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
+    const positions = new Set([0]);
+
+    paragraphs.forEach((paragraph) => {
+      const lineHeight = parseFloat(getComputedStyle(paragraph).lineHeight) || 16;
+
+      if (paragraph.offsetHeight <= scrollEl.clientHeight) {
+        positions.add(Math.min(maxScroll, paragraph.offsetTop));
+        return;
+      }
+
+      for (
+        let offset = paragraph.offsetTop + lineHeight;
+        offset < paragraph.offsetTop + paragraph.offsetHeight;
+        offset += lineHeight
+      ) {
+        positions.add(Math.min(maxScroll, offset));
+      }
+    });
+
+    positions.add(maxScroll);
+    return [...positions].sort((a, b) => a - b);
+  }
+
+  function clipStatementToCompleteParagraphs() {
+    const scrollEl = els.statementScroll;
+    if (!scrollEl) return;
+
+    const paragraphs = getStatementParagraphs();
+    const viewTop = scrollEl.scrollTop;
+    const viewHeight = scrollEl.clientHeight;
+    let clipBottom = viewHeight;
+
+    paragraphs.forEach((paragraph) => {
+      const relTop = paragraph.offsetTop - viewTop;
+      const relBottom = relTop + paragraph.offsetHeight;
+
+      if (relTop < viewHeight && relBottom > viewHeight + 0.5) {
+        clipBottom = Math.max(0, relTop);
+      }
+    });
+
+    if (clipBottom < viewHeight) {
+      scrollEl.style.clipPath = `inset(0 0 ${viewHeight - clipBottom}px 0)`;
+    } else {
+      scrollEl.style.clipPath = '';
+    }
+  }
+
+  function updateStatementProgress() {
+    const scrollEl = els.statementScroll;
+    const thumb = els.statementProgress;
+    const wrap = els.statementProgressWrap;
+    if (!scrollEl || !thumb || !wrap) return;
+
+    const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+    if (maxScroll <= 0) {
+      wrap.hidden = true;
+      thumb.style.height = '0';
+      thumb.style.transform = 'translateY(0)';
+      return;
+    }
+
+    wrap.hidden = false;
+    const trackHeight = wrap.clientHeight;
+    const minThumb = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.35;
+    const computedThumbHeight = Math.max(minThumb, (scrollEl.clientHeight / scrollEl.scrollHeight) * trackHeight);
+    const travel = Math.max(0, trackHeight - computedThumbHeight);
+    const top = (scrollEl.scrollTop / maxScroll) * travel;
+
+    thumb.style.height = `${computedThumbHeight}px`;
+    thumb.style.transform = `translateY(${top}px)`;
+  }
+
+  function syncStatementScroll() {
+    clipStatementToCompleteParagraphs();
+    updateStatementProgress();
+  }
+
+  function snapStatementScroll(direction) {
+    const scrollEl = els.statementScroll;
+    if (!scrollEl) return;
+
+    const positions = getStatementSnapPositions();
+    const current = scrollEl.scrollTop;
+    const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+
+    if (direction > 0) {
+      const next = positions.find((pos) => pos > current + 1);
+      scrollEl.scrollTop = next ?? maxScroll;
+      return;
+    }
+
+    const previous = [...positions].reverse().find((pos) => pos < current - 1);
+    scrollEl.scrollTop = previous ?? 0;
   }
 
   function renderMeta(project) {
@@ -262,6 +373,7 @@
     if (els.titleBox) els.titleBox.textContent = project.title;
     renderStatement(project.statement);
     if (els.statementScroll) els.statementScroll.scrollTop = 0;
+    requestAnimationFrame(syncStatementScroll);
 
     const hasMedia = getMediaList(project, 'photo').length || getMediaList(project, 'video').length;
     if (els.viewer) els.viewer.hidden = !hasMedia && !project.contact;
@@ -417,16 +529,18 @@
     if (event.key === 'ArrowDown') stepLightbox(1);
   });
 
+  els.statementScroll?.addEventListener('scroll', syncStatementScroll, { passive: true });
+
   els.info?.addEventListener('wheel', (event) => {
     const scrollEl = els.statementScroll;
     if (!scrollEl || scrollEl.scrollHeight <= scrollEl.clientHeight) return;
     if (event.target.closest('.project-meta') || event.target.closest('.project-label')) return;
     event.preventDefault();
-    scrollEl.scrollTop = Math.max(
-      0,
-      Math.min(scrollEl.scrollHeight - scrollEl.clientHeight, scrollEl.scrollTop + event.deltaY),
-    );
+    snapStatementScroll(event.deltaY);
+    syncStatementScroll();
   }, { passive: false });
+
+  window.addEventListener('resize', syncStatementScroll, { passive: true });
 
   window.addEventListener('hashchange', () => {
     closeLightbox();
