@@ -496,16 +496,18 @@ body.layout-detail::before {
   justify-content: center;
   min-height: 100vh;
   min-height: 100svh;
-  padding: clamp(4.5rem, 10vh, 6.5rem) clamp(1rem, 2vw, 2rem) clamp(1.5rem, 4vh, 2.5rem);
+  padding:
+    clamp(4.5rem, 10vh, 6.5rem)
+    clamp(1rem, 2vw, 2rem)
+    clamp(1.5rem, 4vh, 2.5rem);
   box-sizing: border-box;
   pointer-events: none;
 }
 
-.project-layout-frame {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+.project-scale {
+  width: min(94vw, 112rem);
+  transform: scale(var(--project-scale));
+  transform-origin: center center;
   pointer-events: none;
 }
 
@@ -514,11 +516,10 @@ body.layout-detail::before {
   grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
   gap: clamp(2rem, 4.5vw, 4.5rem);
   align-items: start;
-  width: min(94vw, 112rem);
+  width: 100%;
   margin: 0;
   padding: 0;
-  transform: scale(var(--project-scale));
-  transform-origin: center center;
+  pointer-events: auto;
 }
 
 .project-media-col,
@@ -1074,12 +1075,10 @@ body.project-lightbox-open {
 
 @media (max-width: 900px) {
   .project-page {
-    align-items: center;
-    padding-top: 4.5rem;
+    --project-scale: 0.82;
   }
 
   .project-layout {
-    width: min(96vw, 112rem);
     grid-template-columns: 1fr;
     gap: 2.5rem;
   }
