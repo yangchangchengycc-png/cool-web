@@ -7,7 +7,7 @@ window.PROJECT_PAGES = {
     slug: 'precarious-force',
     title: 'precarious force',
     statement:
-      'The horizontal lever symbolizes the essence of balance and the relentless pursuit of a fair society. Like the classical imagery of the goddess of justice, balance here does not settle contradictions, but exposes their coexistence. A feather is chosen not merely for its lightness, but for the specific weight it represents\u2014appearing close to the earth while pointing toward the sky, it operates along the fault line between lightness and heaviness, ideal and reality, visible forces and hidden systems.',
+      'This project focused on creating physical interactive installation that visually imbalance or create uncomfortable emotions for the audience. Utilize physical structural imbalances to induce interaction.\n\nAt the same time, I hope that my installation will change at any time during a certain period of time, and the accompanying question is whether these seemingly unstable structures will collapse?\n\nPerhaps this cycle is just an exhibition time, it can be tens of seconds, or it can be a long time. But this process is constantly attracting attention, but we never know when the moment the balance is broken.',
     materials: 'Acrylic. Metal. Step motor. Feather',
     dimensions: '3m x 0.2m x 0.4m',
     year: '2022',

@@ -76,6 +76,20 @@
     });
   }
 
+  function renderStatement(text) {
+    if (!els.statement) return;
+    els.statement.replaceChildren();
+    String(text || '')
+      .split(/\n\s*\n/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach((part) => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = part;
+        els.statement.appendChild(paragraph);
+      });
+  }
+
   function renderMeta(project) {
     if (!els.meta) return;
     els.meta.innerHTML = '';
@@ -246,7 +260,7 @@
     document.title = `Portfolio — ${project.title}`;
 
     if (els.titleBox) els.titleBox.textContent = project.title;
-    if (els.statement) els.statement.textContent = project.statement;
+    renderStatement(project.statement);
     if (els.statementScroll) els.statementScroll.scrollTop = 0;
 
     const hasMedia = getMediaList(project, 'photo').length || getMediaList(project, 'video').length;
