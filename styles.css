@@ -480,6 +480,29 @@ body::before {
   min-height: 100vh;
   min-height: 100svh;
   overflow-x: hidden;
+  --project-line: 2px;
+  --project-line-color: #000;
+  --pdf-w: 1920;
+  --pdf-h: 1080;
+  --project-ui: min(100vw / var(--pdf-w), 100vh / var(--pdf-h));
+  --pdf-content-top: 391;
+  --pdf-media-w: 856;
+  --pdf-info-w: 424;
+  --pdf-gap: 50;
+  --pdf-stage-h: 349;
+  --pdf-viewer-gap: 5.5;
+  --pdf-nav-h: 15.6;
+  --pdf-controls-h: 24;
+  --pdf-title-box-w: 365;
+  --pdf-tab-w: 52;
+  --pdf-statement-size: 12;
+  --pdf-statement-leading: 15.6;
+  --pdf-meta-size: 12;
+  --pdf-meta-leading: 16.2;
+  --pdf-label-size: 12;
+  --pdf-info-gap: 22.5;
+  --pdf-rule-dash-w: 37.6;
+  --pdf-info-top: calc(var(--pdf-nav-h) + var(--pdf-viewer-gap));
 }
 
 body.layout-detail::before {
@@ -487,54 +510,62 @@ body.layout-detail::before {
 }
 
 .project-page {
-  --project-stroke: 2px solid #000;
-  --ps: 0.7;
-  --project-width: min(calc(94vw * var(--ps)), calc(112rem * var(--ps)));
-  --project-viewer-head: calc((1.35rem + 0.55rem) * var(--ps));
   position: relative;
   z-index: 6;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: flex-start;
+  box-sizing: border-box;
   min-height: 100vh;
   min-height: 100svh;
   padding:
-    clamp(4.5rem, 10vh, 6.5rem)
-    clamp(1rem, 2vw, 2rem)
-    clamp(1.5rem, 4vh, 2.5rem);
-  box-sizing: border-box;
+    calc(var(--pdf-content-top) * var(--project-ui))
+    calc(((var(--pdf-w) - var(--pdf-media-w) - var(--pdf-gap) - var(--pdf-info-w)) / 2) * var(--project-ui))
+    calc(((var(--pdf-h) - 727.4) / 2) * var(--project-ui));
   pointer-events: none;
 }
 
 .project-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.42fr) minmax(0, 0.58fr);
-  gap: calc(clamp(2rem, 4.5vw, 4.5rem) * var(--ps));
-  align-items: start;
-  width: var(--project-width);
-  max-width: calc(100vw - 2rem);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: calc(var(--pdf-gap) * var(--project-ui));
+  width: max-content;
+  max-width: 100%;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 
 .project-media-col,
 .project-info-col {
   pointer-events: auto;
+  flex: 0 0 auto;
+}
+
+.project-media-col {
+  width: calc(var(--pdf-media-w) * var(--project-ui));
+  max-width: calc(var(--pdf-media-w) * var(--project-ui));
+}
+
+.project-info-col {
+  width: calc(var(--pdf-info-w) * var(--project-ui));
+  max-width: calc(var(--pdf-info-w) * var(--project-ui));
 }
 
 .project-viewer {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto auto;
   justify-items: center;
-  gap: calc(0.55rem * var(--ps));
+  gap: calc(var(--pdf-viewer-gap) * var(--project-ui));
 }
 
 .project-nav {
   display: grid;
   place-items: center;
-  width: calc(2rem * var(--ps));
-  height: calc(1.35rem * var(--ps));
+  width: calc(14 * var(--project-ui));
+  height: calc(var(--pdf-nav-h) * var(--project-ui));
   padding: 0;
   border: 0;
   background: transparent;
@@ -560,8 +591,8 @@ body.layout-detail::before {
 .project-stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 1.55 / 1;
-  border: var(--project-stroke);
+  height: calc(var(--pdf-stage-h) * var(--project-ui));
+  border: var(--project-line) solid var(--project-line-color);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
@@ -572,7 +603,7 @@ body.layout-detail::before {
 }
 
 .project-stage__empty {
-  font-size: calc((0.82rem + 1px) * var(--ps));
+  font-size: calc(var(--pdf-meta-size) * var(--project-ui));
   font-weight: 500;
   color: rgba(0, 0, 0, 0.42);
 }
@@ -620,8 +651,8 @@ body.layout-detail::before {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: calc(3.4rem * var(--ps));
-  height: calc(3.4rem * var(--ps));
+  width: calc(34 * var(--project-ui));
+  height: calc(34 * var(--project-ui));
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.72);
@@ -629,7 +660,7 @@ body.layout-detail::before {
   cursor: pointer;
   display: grid;
   place-items: center;
-  padding-left: calc(0.15rem * var(--ps));
+  padding-left: calc(1.5 * var(--project-ui));
   z-index: 10;
   pointer-events: auto;
   transition: opacity 160ms ease;
@@ -641,10 +672,10 @@ body.layout-detail::before {
 
 .project-expand {
   position: absolute;
-  right: calc(0.72rem * var(--ps));
-  bottom: calc(0.72rem * var(--ps));
-  width: calc(1.65rem * var(--ps));
-  height: calc(1.65rem * var(--ps));
+  right: calc(7.2 * var(--project-ui));
+  bottom: calc(7.2 * var(--project-ui));
+  width: calc(16.5 * var(--project-ui));
+  height: calc(16.5 * var(--project-ui));
   border: 0;
   background: transparent;
   color: rgba(0, 0, 0, 0.72);
@@ -660,21 +691,25 @@ body.layout-detail::before {
 
 .project-controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns:
+    calc(var(--pdf-title-box-w) * var(--project-ui))
+    calc(var(--pdf-tab-w) * var(--project-ui))
+    calc(var(--pdf-tab-w) * var(--project-ui))
+    minmax(0, 1fr);
   width: 100%;
-  margin-top: calc(0.35rem * var(--ps));
-  border: var(--project-stroke);
+  margin-top: calc(var(--pdf-viewer-gap) * var(--project-ui));
+  border: var(--project-line) solid var(--project-line-color);
 }
 
 .project-title-box,
 .project-tab {
-  min-height: calc(2.35rem * var(--ps));
+  min-height: calc(var(--pdf-controls-h) * var(--project-ui));
   margin: 0;
   border: 0;
-  border-right: var(--project-stroke);
+  border-right: var(--project-line) solid var(--project-line-color);
   background: transparent;
   font-family: var(--font-ui);
-  font-size: calc((clamp(0.72rem, 0.95vw, 0.86rem) + 1px) * var(--ps));
+  font-size: calc(var(--pdf-label-size) * var(--project-ui));
   font-weight: 500;
   line-height: 1.25;
   color: rgba(0, 0, 0, 0.82);
@@ -683,13 +718,17 @@ body.layout-detail::before {
 .project-title-box {
   display: flex;
   align-items: center;
-  padding: calc(0.55rem * var(--ps)) calc(0.9rem * var(--ps));
+  padding:
+    0
+    calc(9 * var(--project-ui));
   text-transform: lowercase;
 }
 
 .project-tab {
-  min-width: calc(5.5rem * var(--ps));
-  padding: calc(0.55rem * var(--ps)) calc(1rem * var(--ps));
+  min-width: 0;
+  padding:
+    0
+    calc(8 * var(--project-ui));
   cursor: pointer;
 }
 
@@ -715,28 +754,28 @@ body.layout-detail::before {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: calc(1.35rem * var(--ps));
-  min-height: 0;
-  padding-top: var(--project-viewer-head);
+  gap: calc(var(--pdf-info-gap) * var(--project-ui));
+  align-self: start;
+  padding-top: calc(var(--pdf-info-top) * var(--project-ui));
 }
 
 .project-rule {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: calc(0.45rem * var(--ps));
+  gap: calc(4.5 * var(--project-ui));
 }
 
 .project-rule::before {
   content: '';
   width: 100%;
-  height: 2px;
+  height: var(--project-line);
   background: #000;
 }
 
 .project-rule__dash {
-  width: calc(2.35rem * var(--ps));
-  height: calc(4px * var(--ps));
+  width: calc(var(--pdf-rule-dash-w) * var(--project-ui));
+  height: calc(4 * var(--project-ui));
   background: #000;
 }
 
@@ -749,9 +788,9 @@ body.layout-detail::before {
 }
 
 .project-statement {
-  font-size: calc((clamp(0.78rem, 0.95vw, 0.92rem) + 1px) * var(--ps));
+  font-size: calc(var(--pdf-statement-size) * var(--project-ui));
   font-weight: 500;
-  line-height: 1.65;
+  line-height: calc(var(--pdf-statement-leading) / var(--pdf-statement-size));
   text-align: justify;
   color: rgba(0, 0, 0, 0.78);
 }
@@ -759,9 +798,11 @@ body.layout-detail::before {
 .project-label {
   display: inline-block;
   align-self: flex-start;
-  padding: calc(0.22rem * var(--ps)) calc(0.62rem * var(--ps));
-  border: var(--project-stroke);
-  font-size: calc((0.78rem + 1px) * var(--ps));
+  padding:
+    calc(2.2 * var(--project-ui))
+    calc(6.2 * var(--project-ui));
+  border: var(--project-line) solid var(--project-line-color);
+  font-size: calc(var(--pdf-label-size) * var(--project-ui));
   font-weight: 600;
   line-height: 1.2;
   color: rgba(0, 0, 0, 0.82);
@@ -769,27 +810,27 @@ body.layout-detail::before {
 
 .project-meta__list {
   display: grid;
-  gap: calc(0.55rem * var(--ps));
+  gap: calc(5.5 * var(--project-ui));
 }
 
 .project-meta__list dt {
-  font-size: calc((clamp(0.78rem, 0.92vw, 0.88rem) + 1px) * var(--ps));
+  font-size: calc(var(--pdf-meta-size) * var(--project-ui));
   font-weight: 600;
   color: rgba(0, 0, 0, 0.82);
 }
 
 .project-meta__list dd {
   margin: 0;
-  font-size: calc((clamp(0.76rem, 0.88vw, 0.86rem) + 1px) * var(--ps));
+  font-size: calc(var(--pdf-meta-size) * var(--project-ui));
   font-weight: 500;
-  line-height: 1.45;
+  line-height: calc(var(--pdf-meta-leading) / var(--pdf-meta-size));
   color: rgba(0, 0, 0, 0.52);
 }
 
 .project-contact-line {
-  font-size: calc((clamp(0.78rem, 0.92vw, 0.88rem) + 1px) * var(--ps));
+  font-size: calc(var(--pdf-meta-size) * var(--project-ui));
   font-weight: 500;
-  line-height: 1.6;
+  line-height: calc(var(--pdf-meta-leading) / var(--pdf-meta-size));
   color: rgba(0, 0, 0, 0.62);
 }
 
@@ -855,7 +896,7 @@ body.project-lightbox-open {
   width: auto;
   height: auto;
   object-fit: contain;
-  border: var(--project-stroke);
+  border: var(--project-line) solid var(--project-line-color);
 }
 
 .layout-work {
@@ -1070,28 +1111,40 @@ body.project-lightbox-open {
 }
 
 @media (max-width: 900px) {
+  .project-page {
+    padding-inline: calc(20 * var(--project-ui));
+  }
+
   .project-layout {
-    grid-template-columns: 1fr;
-    gap: calc(2.5rem * var(--ps));
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--pdf-gap) * var(--project-ui));
+    width: 100%;
+  }
+
+  .project-media-col,
+  .project-info-col {
+    width: min(calc(var(--pdf-media-w) * var(--project-ui)), 100%);
+    max-width: 100%;
   }
 
   .project-info-col {
+    width: min(calc(var(--pdf-info-w) * var(--project-ui)), 100%);
     padding-top: 0;
   }
 
   .project-controls {
     grid-template-columns: 1fr 1fr;
-    border: var(--project-stroke);
   }
 
   .project-title-box {
     grid-column: 1 / -1;
     border-right: 0;
-    border-bottom: var(--project-stroke);
+    border-bottom: var(--project-line) solid var(--project-line-color);
   }
 
   .project-tab {
-    border-right: var(--project-stroke);
+    border-right: var(--project-line) solid var(--project-line-color);
   }
 
   .project-tab:last-child {
@@ -1118,8 +1171,8 @@ body.project-lightbox-open {
   }
 
   .project-layout {
-    width: min(var(--project-width), calc(100vw - 2.5rem));
-    max-width: none;
+    width: 100%;
+    padding-inline: calc(20 * var(--project-ui));
   }
 
   .project-tab {
