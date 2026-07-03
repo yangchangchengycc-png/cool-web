@@ -493,7 +493,7 @@ body.layout-detail::before {
   --project-viewer-head: calc((1.35rem + 0.55rem) * var(--ps));
   --project-statement-size: calc((clamp(0.78rem, 0.95vw, 0.92rem) + 1px) * var(--ps));
   --project-statement-scroll-height: calc(var(--project-statement-size) * 1.65 * 10);
-  --project-statement-progress-width: calc(2px * var(--ps));
+  --project-statement-progress-width: calc(5px * var(--ps));
   position: relative;
   z-index: 6;
   display: flex;
@@ -766,7 +766,6 @@ body.layout-detail::before {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-snap-type: y mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -793,6 +792,7 @@ body.layout-detail::before {
   left: 0;
   top: 0;
   width: 100%;
+  height: 25%;
   background: #000;
   will-change: transform;
 }
@@ -808,8 +808,6 @@ body.layout-detail::before {
 
 .project-statement p {
   margin: 0 0 calc(0.75rem * var(--ps));
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
 }
 
 .project-statement p:last-child {

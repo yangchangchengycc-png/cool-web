@@ -33,6 +33,7 @@
   let mediaIndex = 0;
   let youtubePlaying = false;
   let touchStartY = 0;
+  let statementSyncFrame = 0;
 
   function getSlug() {
     return window.location.hash.replace('#', '') || 'precarious-force';
@@ -90,42 +91,11 @@
         paragraph.textContent = part;
         els.statement.appendChild(paragraph);
       });
-    requestAnimationFrame(() => {
-      syncStatementScroll();
-    });
+    requestAnimationFrame(scheduleStatementSync);
   }
 
   function getStatementParagraphs() {
     return els.statement ? [...els.statement.querySelectorAll('p')] : [];
-  }
-
-  function getStatementSnapPositions() {
-    const scrollEl = els.statementScroll;
-    if (!scrollEl) return [0];
-
-    const paragraphs = getStatementParagraphs();
-    const maxScroll = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
-    const positions = new Set([0]);
-
-    paragraphs.forEach((paragraph) => {
-      const lineHeight = parseFloat(getComputedStyle(paragraph).lineHeight) || 16;
-
-      if (paragraph.offsetHeight <= scrollEl.clientHeight) {
-        positions.add(Math.min(maxScroll, paragraph.offsetTop));
-        return;
-      }
-
-      for (
-        let offset = paragraph.offsetTop + lineHeight;
-        offset < paragraph.offsetTop + paragraph.offsetHeight;
-        offset += lineHeight
-      ) {
-        positions.add(Math.min(maxScroll, offset));
-      }
-    });
-
-    positions.add(maxScroll);
-    return [...positions].sort((a, b) => a - b);
   }
 
   function clipStatementToCompleteParagraphs() {
@@ -162,19 +132,16 @@
     const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
     if (maxScroll <= 0) {
       wrap.hidden = true;
-      thumb.style.height = '0';
       thumb.style.transform = 'translateY(0)';
       return;
     }
 
     wrap.hidden = false;
     const trackHeight = wrap.clientHeight;
-    const minThumb = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.35;
-    const computedThumbHeight = Math.max(minThumb, (scrollEl.clientHeight / scrollEl.scrollHeight) * trackHeight);
-    const travel = Math.max(0, trackHeight - computedThumbHeight);
+    const thumbHeight = trackHeight * 0.25;
+    const travel = trackHeight - thumbHeight;
     const top = (scrollEl.scrollTop / maxScroll) * travel;
 
-    thumb.style.height = `${computedThumbHeight}px`;
     thumb.style.transform = `translateY(${top}px)`;
   }
 
@@ -183,22 +150,12 @@
     updateStatementProgress();
   }
 
-  function snapStatementScroll(direction) {
-    const scrollEl = els.statementScroll;
-    if (!scrollEl) return;
-
-    const positions = getStatementSnapPositions();
-    const current = scrollEl.scrollTop;
-    const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
-
-    if (direction > 0) {
-      const next = positions.find((pos) => pos > current + 1);
-      scrollEl.scrollTop = next ?? maxScroll;
-      return;
-    }
-
-    const previous = [...positions].reverse().find((pos) => pos < current - 1);
-    scrollEl.scrollTop = previous ?? 0;
+  function scheduleStatementSync() {
+    if (statementSyncFrame) return;
+    statementSyncFrame = requestAnimationFrame(() => {
+      statementSyncFrame = 0;
+      syncStatementScroll();
+    });
   }
 
   function renderMeta(project) {
@@ -373,7 +330,7 @@
     if (els.titleBox) els.titleBox.textContent = project.title;
     renderStatement(project.statement);
     if (els.statementScroll) els.statementScroll.scrollTop = 0;
-    requestAnimationFrame(syncStatementScroll);
+    requestAnimationFrame(scheduleStatementSync);
 
     const hasMedia = getMediaList(project, 'photo').length || getMediaList(project, 'video').length;
     if (els.viewer) els.viewer.hidden = !hasMedia && !project.contact;
@@ -529,18 +486,19 @@
     if (event.key === 'ArrowDown') stepLightbox(1);
   });
 
-  els.statementScroll?.addEventListener('scroll', syncStatementScroll, { passive: true });
+  els.statementScroll?.addEventListener('scroll', scheduleStatementSync, { passive: true });
 
   els.info?.addEventListener('wheel', (event) => {
     const scrollEl = els.statementScroll;
     if (!scrollEl || scrollEl.scrollHeight <= scrollEl.clientHeight) return;
     if (event.target.closest('.project-meta') || event.target.closest('.project-label')) return;
     event.preventDefault();
-    snapStatementScroll(event.deltaY);
-    syncStatementScroll();
+    const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+    scrollEl.scrollTop = Math.max(0, Math.min(maxScroll, scrollEl.scrollTop + event.deltaY));
+    scheduleStatementSync();
   }, { passive: false });
 
-  window.addEventListener('resize', syncStatementScroll, { passive: true });
+  window.addEventListener('resize', scheduleStatementSync, { passive: true });
 
   window.addEventListener('hashchange', () => {
     closeLightbox();
