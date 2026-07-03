@@ -13,13 +13,18 @@ window.PROJECT_PAGES = {
     year: '2022',
     media: {
       photo: [
-        { src: '../assets/projects/precarious-force-hero.jpg', alt: 'precarious force installation view' },
-        { src: '../assets/projects/precarious-force-01.png', alt: 'precarious force detail' },
+        { src: '../assets/projects/precarious-force-01.png', alt: 'precarious force 1' },
+        { src: '../assets/projects/precarious-force-02.png', alt: 'precarious force 2' },
+        { src: '../assets/projects/precarious-force-03.png', alt: 'precarious force 3' },
+        { src: '../assets/projects/precarious-force-04.png', alt: 'precarious force 4' },
+        { src: '../assets/projects/precarious-force-05.png', alt: 'precarious force 5' },
+        { src: '../assets/projects/precarious-force-06.png', alt: 'precarious force 7' },
+        { src: '../assets/projects/precarious-force-07.png', alt: 'precarious force 8' },
       ],
       video: [
         {
           youtube: 's8IcE48qEbI',
-          poster: '../assets/projects/precarious-force-hero.jpg',
+          poster: '../assets/projects/precarious-force-01.png',
           alt: 'precarious force video',
         },
       ],

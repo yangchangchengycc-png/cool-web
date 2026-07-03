@@ -34,6 +34,7 @@
   let youtubePlaying = false;
   let touchStartY = 0;
   let statementSyncFrame = 0;
+  let photoSyncFrame = 0;
 
   function getSlug() {
     return window.location.hash.replace('#', '') || 'precarious-force';
@@ -76,6 +77,49 @@
   function setActiveTab(mode) {
     els.tabs.forEach((tab) => {
       tab.classList.toggle('is-active', tab.dataset.mode === mode);
+    });
+  }
+
+  function getPhotoReel() {
+    return els.stage?.querySelector('.project-stage__reel') ?? null;
+  }
+
+  function scrollPhotoReelTo(index, behavior = 'auto') {
+    const reel = getPhotoReel();
+    if (!reel) return;
+    const items = getMediaList(getProject(), 'photo');
+    if (!items.length) return;
+
+    mediaIndex = ((index % items.length) + items.length) % items.length;
+    const pageHeight = reel.clientHeight;
+    if (!pageHeight) return;
+
+    reel.scrollTo({
+      top: mediaIndex * pageHeight,
+      behavior,
+    });
+  }
+
+  function syncPhotoIndexFromReel() {
+    const reel = getPhotoReel();
+    if (!reel) return;
+    const items = getMediaList(getProject(), 'photo');
+    if (!items.length) return;
+
+    const pageHeight = reel.clientHeight;
+    if (!pageHeight) return;
+
+    mediaIndex = Math.min(
+      items.length - 1,
+      Math.max(0, Math.round(reel.scrollTop / pageHeight)),
+    );
+  }
+
+  function schedulePhotoSync() {
+    if (photoSyncFrame) return;
+    photoSyncFrame = requestAnimationFrame(() => {
+      photoSyncFrame = 0;
+      syncPhotoIndexFromReel();
     });
   }
 
@@ -252,13 +296,24 @@
 
     els.stage.classList.add('is-photo');
     mediaIndex = ((mediaIndex % items.length) + items.length) % items.length;
-    const item = items[mediaIndex];
-    const img = document.createElement('img');
-    img.className = 'project-stage__media';
-    img.src = item.src;
-    img.alt = item.alt || project.title;
-    img.decoding = 'async';
-    els.stage.appendChild(img);
+
+    const reel = document.createElement('div');
+    reel.className = 'project-stage__reel';
+    reel.setAttribute('aria-label', `${project.title} photos`);
+
+    items.forEach((item, index) => {
+      const img = document.createElement('img');
+      img.className = 'project-stage__media';
+      img.src = item.src;
+      img.alt = item.alt || `${project.title} ${index + 1}`;
+      img.decoding = 'async';
+      img.loading = index === 0 ? 'eager' : 'lazy';
+      reel.appendChild(img);
+    });
+
+    els.stage.appendChild(reel);
+    reel.addEventListener('scroll', schedulePhotoSync, { passive: true });
+    requestAnimationFrame(() => scrollPhotoReelTo(mediaIndex));
   }
 
   function renderVideoStage(project) {
@@ -354,8 +409,7 @@
     if (currentMode !== 'photo') return;
     const items = getMediaList(getProject(), 'photo');
     if (items.length <= 1) return;
-    mediaIndex = (mediaIndex + delta + items.length) % items.length;
-    renderStage(getProject());
+    scrollPhotoReelTo(mediaIndex + delta, 'smooth');
   }
 
   function playVideo() {
@@ -429,8 +483,8 @@
     els.lightboxImage.src = item.src;
     els.lightboxImage.alt = item.alt || getProject().title;
 
-    const img = els.stage.querySelector('.project-stage__media');
-    if (img) {
+    const img = getPhotoReel()?.querySelectorAll('.project-stage__media')[mediaIndex];
+    if (img instanceof HTMLImageElement) {
       img.src = item.src;
       img.alt = item.alt || getProject().title;
     }
@@ -487,6 +541,18 @@
   });
 
   els.statementScroll?.addEventListener('scroll', scheduleStatementSync, { passive: true });
+
+  els.viewer?.addEventListener('wheel', (event) => {
+    if (currentMode !== 'photo') return;
+    const reel = getPhotoReel();
+    if (!reel || reel.scrollHeight <= reel.clientHeight) return;
+    event.preventDefault();
+    reel.scrollTop = Math.max(
+      0,
+      Math.min(reel.scrollHeight - reel.clientHeight, reel.scrollTop + event.deltaY),
+    );
+    schedulePhotoSync();
+  }, { passive: false });
 
   els.info?.addEventListener('wheel', (event) => {
     const scrollEl = els.statementScroll;

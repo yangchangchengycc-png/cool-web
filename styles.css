@@ -588,6 +588,25 @@ body.layout-detail::before {
   object-fit: cover;
 }
 
+.project-stage__reel {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.project-stage__reel::-webkit-scrollbar {
+  display: none;
+}
+
+.project-stage__reel .project-stage__media {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
 .project-stage__poster {
   position: absolute;
   inset: 0;
