@@ -655,7 +655,11 @@ body.layout-detail::before {
   z-index: 2;
 }
 
-.project-nav[hidden],
+.project-nav[hidden] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .project-expand[hidden],
 .project-play[hidden] {
   display: none;
