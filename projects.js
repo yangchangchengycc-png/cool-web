@@ -7,7 +7,7 @@ window.PROJECT_PAGES = {
     slug: 'precarious-force',
     title: 'precarious force',
     statement:
-      'Using balance as the primary language, this artwork explores the conflict between the weight of reality and the lightness of ideals. Like the classical imagery of the goddess of justice, balance here does not settle contradictions, but exposes their coexistence. A feather is chosen not merely for its lightness, but for the specific weight it represents\u2014appearing close to the earth while pointing toward the sky, it operates along the fault line between lightness and heaviness, ideal and reality, visible forces and hidden systems.',
+      'The horizontal lever symbolizes the essence of balance and the relentless pursuit of a fair society. Like the classical imagery of the goddess of justice, balance here does not settle contradictions, but exposes their coexistence. A feather is chosen not merely for its lightness, but for the specific weight it represents\u2014appearing close to the earth while pointing toward the sky, it operates along the fault line between lightness and heaviness, ideal and reality, visible forces and hidden systems.',
     materials: 'Acrylic. Metal. Step motor. Feather',
     dimensions: '3m x 0.2m x 0.4m',
     year: '2022',

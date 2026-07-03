@@ -18,6 +18,7 @@
     tabs: [...document.querySelectorAll('.project-tab')],
     viewer: document.getElementById('project-viewer'),
     info: document.getElementById('project-info'),
+    statementScroll: document.getElementById('project-statement-scroll'),
     lightbox: document.getElementById('project-lightbox'),
     lightboxImage: document.getElementById('project-lightbox-image'),
     lightboxPrev: document.getElementById('project-lightbox-prev'),
@@ -62,9 +63,11 @@
       rel: '0',
       modestbranding: '1',
       playsinline: '1',
+      enablejsapi: '1',
+      origin: window.location.origin,
     });
     if (autoplay) params.set('autoplay', '1');
-    return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
+    return `https://www.youtube.com/embed/${id}?${params.toString()}`;
   }
 
   function setActiveTab(mode) {
@@ -79,32 +82,41 @@
 
     if (project.contact) {
       const contact = document.createElement('p');
-      contact.className = 'project-meta__line';
+      contact.className = 'project-contact-line';
       contact.innerHTML = `<span class="project-meta__label">Email</span> ${project.contact}`;
       els.meta.appendChild(contact);
       return;
     }
 
-    const lines = [project.materials, project.dimensions, project.year].filter(Boolean);
+    const rows = [
+      ['Materials', project.materials],
+      ['Dimensions', project.dimensions],
+      ['Year', project.year],
+    ].filter(([, value]) => value);
 
-    if (!lines.length) {
+    if (!rows.length) {
       els.meta.hidden = true;
       return;
     }
 
     els.meta.hidden = false;
-    lines.forEach((line) => {
-      const row = document.createElement('p');
-      row.className = 'project-meta__line';
-      row.textContent = line;
-      els.meta.appendChild(row);
+    const dl = document.createElement('dl');
+    dl.className = 'project-meta__list';
+
+    rows.forEach(([label, value]) => {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      dl.appendChild(dt);
+      dl.appendChild(dd);
     });
+
+    els.meta.appendChild(dl);
   }
 
   function stopYouTube() {
     youtubePlaying = false;
-    const iframe = els.stage?.querySelector('.project-stage__youtube');
-    if (iframe) iframe.removeAttribute('src');
     els.stage?.classList.remove('is-playing');
     els.stageWrap?.classList.remove('is-playing');
     if (els.play) {
@@ -126,17 +138,15 @@
     const isVideo = currentMode === 'video';
 
     if (els.prev) {
-      els.prev.classList.toggle('is-inert', !isPhoto);
+      els.prev.hidden = !isPhoto;
       els.prev.disabled = !isPhoto || photos.length <= 1;
     }
     if (els.next) {
-      els.next.classList.toggle('is-inert', !isPhoto);
+      els.next.hidden = !isPhoto;
       els.next.disabled = !isPhoto || photos.length <= 1;
     }
     if (els.expand) {
-      const showExpand = isPhoto && photos.length > 0;
-      els.expand.classList.toggle('is-inert', !showExpand);
-      if (showExpand) els.expand.removeAttribute('hidden');
+      els.expand.hidden = !isPhoto || photos.length === 0;
     }
     if (els.play) {
       els.play.hidden = !isVideo || videos.length === 0;
@@ -197,13 +207,11 @@
       const iframe = document.createElement('iframe');
       iframe.className = 'project-stage__youtube';
       iframe.title = item.alt || `${project.title} video`;
-      iframe.setAttribute(
-        'allow',
-        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-      );
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
       iframe.setAttribute('allowfullscreen', '');
       iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
       iframe.dataset.youtubeId = youtubeId;
+      iframe.src = buildYouTubeEmbedUrl(youtubeId, false);
       els.stage.appendChild(iframe);
     } else if (item.src) {
       const video = document.createElement('video');
@@ -239,6 +247,7 @@
 
     if (els.titleBox) els.titleBox.textContent = project.title;
     if (els.statement) els.statement.textContent = project.statement;
+    if (els.statementScroll) els.statementScroll.scrollTop = 0;
 
     const hasMedia = getMediaList(project, 'photo').length || getMediaList(project, 'video').length;
     if (els.viewer) els.viewer.hidden = !hasMedia && !project.contact;
@@ -274,7 +283,6 @@
 
     if (iframe && !youtubePlaying) {
       const id = iframe.dataset.youtubeId;
-      if (!id) return;
       iframe.src = buildYouTubeEmbedUrl(id, true);
       youtubePlaying = true;
       els.stage.classList.add('is-playing');
@@ -394,6 +402,17 @@
     if (event.key === 'ArrowUp') stepLightbox(-1);
     if (event.key === 'ArrowDown') stepLightbox(1);
   });
+
+  els.info?.addEventListener('wheel', (event) => {
+    const scrollEl = els.statementScroll;
+    if (!scrollEl || scrollEl.scrollHeight <= scrollEl.clientHeight) return;
+    if (event.target.closest('.project-meta') || event.target.closest('.project-label')) return;
+    event.preventDefault();
+    scrollEl.scrollTop = Math.max(
+      0,
+      Math.min(scrollEl.scrollHeight - scrollEl.clientHeight, scrollEl.scrollTop + event.deltaY),
+    );
+  }, { passive: false });
 
   window.addEventListener('hashchange', () => {
     closeLightbox();

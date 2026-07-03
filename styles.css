@@ -491,6 +491,14 @@ body.layout-detail::before {
   --ps: 0.7;
   --project-width: min(calc(94vw * var(--ps)), calc(112rem * var(--ps)));
   --project-viewer-head: calc((1.35rem + 0.55rem) * var(--ps));
+  --project-media-col-width: calc(var(--project-width) * 1.42 / 2);
+  --project-stage-height: calc(var(--project-media-col-width) / 1.55);
+  --project-rule-block: calc((4px * var(--ps)) + (0.45rem * var(--ps)) + 2px);
+  --project-statement-scroll-height: calc(
+    var(--project-stage-height)
+    - (2 * var(--project-rule-block))
+    - (2 * calc(1.35rem * var(--ps)))
+  );
   position: relative;
   z-index: 6;
   display: flex;
@@ -748,7 +756,22 @@ body.layout-detail::before {
   order: 2;
 }
 
+.project-statement-scroll {
+  height: var(--project-statement-scroll-height);
+  max-height: var(--project-statement-scroll-height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.project-statement-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .project-statement {
+  margin: 0;
   font-size: calc((clamp(0.78rem, 0.95vw, 0.92rem) + 1px) * var(--ps));
   font-weight: 500;
   line-height: 1.65;
