@@ -476,6 +476,11 @@ body::before {
   left: 25.2%;
 }
 
+.scatter-item--graffiti {
+  right: 9.5%;
+  bottom: 16.8%;
+}
+
 .layout-detail {
   min-height: 100vh;
   min-height: 100svh;
@@ -491,7 +496,7 @@ body.layout-detail::before {
   --ps: 0.7;
   --project-width: min(calc(94vw * var(--ps)), calc(112rem * var(--ps)));
   --project-viewer-head: calc((1.35rem + 0.55rem) * var(--ps));
-  --project-statement-size: calc((clamp(0.78rem, 0.95vw, 0.92rem) + 1px) * var(--ps));
+  --project-statement-size: calc((clamp(0.84rem, 1vw, 0.98rem) + 1px) * var(--ps));
   --project-statement-scroll-height: calc(var(--project-statement-size) * 1.65 * 10);
   --project-statement-progress-width: calc(4px * var(--ps));
   position: relative;
@@ -702,6 +707,15 @@ body.layout-detail::before {
   border: var(--project-stroke);
 }
 
+.project-controls.is-photo-only,
+.project-controls.is-video-only {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.project-tab[hidden] {
+  display: none;
+}
+
 .project-title-box,
 .project-tab {
   min-height: calc(2.35rem * var(--ps));
@@ -710,8 +724,8 @@ body.layout-detail::before {
   border-right: var(--project-stroke);
   background: transparent;
   font-family: var(--font-ui);
-  font-size: calc((clamp(0.72rem, 0.95vw, 0.86rem) + 1px) * var(--ps));
-  font-weight: 500;
+  font-size: calc((clamp(0.78rem, 1vw, 0.92rem) + 1px) * var(--ps));
+  font-weight: 700;
   line-height: 1.25;
   color: rgba(0, 0, 0, 0.82);
 }
@@ -727,6 +741,22 @@ body.layout-detail::before {
   min-width: calc(5.5rem * var(--ps));
   padding: calc(0.55rem * var(--ps)) calc(1rem * var(--ps));
   cursor: pointer;
+  color: rgba(0, 0, 0, 0.48);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.project-tab:hover {
+  background: #000;
+  color: #fff;
+  font-weight: 800;
+}
+
+.project-controls:has(.project-tab:hover) .project-tab:not(:hover) {
+  background: #fff;
+  color: #000;
+  font-weight: 700;
 }
 
 .project-tab:last-child {
@@ -738,8 +768,9 @@ body.layout-detail::before {
 }
 
 .project-tab.is-active {
-  background: rgba(0, 0, 0, 0.04);
-  font-weight: 600;
+  background: #000;
+  color: #fff;
+  font-weight: 800;
 }
 
 .project-tab:disabled {
@@ -799,6 +830,8 @@ body.layout-detail::before {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -833,7 +866,7 @@ body.layout-detail::before {
 .project-statement {
   margin: 0;
   font-size: var(--project-statement-size);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.65;
   text-align: justify;
   color: rgba(0, 0, 0, 0.78);
@@ -895,9 +928,12 @@ body.layout-detail::before {
   inset: 0;
   z-index: 100;
   box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    clamp(0.75rem, 1.5vh, 1.25rem)
+    clamp(2.5rem, 3.5vw, 3rem);
   background: var(--wall);
   isolation: isolate;
 }
@@ -916,15 +952,86 @@ body.project-lightbox-open > :not(.project-lightbox) {
 }
 
 .project-lightbox__frame {
-  position: absolute;
-  inset:
-    clamp(1rem, 2.5vh, 1.5rem)
-    clamp(2.75rem, 5vw, 4rem);
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   pointer-events: none;
+}
+
+.project-lightbox__viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
+  pointer-events: none;
+}
+
+.project-lightbox__image-wrap {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  max-height: 100%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.project-lightbox.is-zoom-mode .project-lightbox__image-wrap {
+  max-width: none;
+  max-height: none;
+}
+
+.project-lightbox.is-zoom-mode .project-lightbox__viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.project-lightbox.is-zoom-mode .project-lightbox__viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.project-lightbox__zoom {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.project-lightbox__zoom-icon {
+  grid-area: 1 / 1;
+}
+
+.project-lightbox__zoom-icon--out {
+  display: none;
+}
+
+.project-lightbox__zoom.is-active .project-lightbox__zoom-icon--in {
+  display: none;
+}
+
+.project-lightbox__zoom.is-active .project-lightbox__zoom-icon--out {
+  display: block;
 }
 
 .project-lightbox__close {
@@ -976,12 +1083,15 @@ body.project-lightbox-open > :not(.project-lightbox) {
   height: auto;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
-  object-position: center center;
-  margin: auto;
   border: var(--project-stroke);
-  pointer-events: auto;
+  box-sizing: border-box;
+  pointer-events: none;
   transition: opacity 220ms ease;
+}
+
+.project-lightbox.is-zoom-mode .project-lightbox__image {
+  max-width: none;
+  max-height: none;
 }
 
 .layout-work {
@@ -1304,6 +1414,11 @@ body.project-lightbox-open > :not(.project-lightbox) {
   .scatter-item--unknown {
     top: 43%;
     left: 12%;
+  }
+
+  .scatter-item--graffiti {
+    right: 8%;
+    bottom: 18%;
   }
 
   .work-roll {

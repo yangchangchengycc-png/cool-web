@@ -106,11 +106,53 @@ window.PROJECT_PAGES = {
     slug: 'question',
     title: '<\u2212 ? \u2212>',
     statement:
-      'An open index for experiments, notes, and uncategorized work in progress.',
-    materials: '',
-    dimensions: '',
-    year: '',
-    media: { photo: [], video: [] },
+      'It is a mechanical installation made of acrylic and metal. The installation is divided into two parts: upper and lower. The upper part is a rotating space composed of two triangular clocks that change at any time. The small balls in this space will undergo continuous compression and deformation, causing them to fall. The lower part is a multi-layer cross rotating sculpture and corresponding gear structure. An interactive installation that rotates and interacts with each other driven by two step motors.\n\nBalance, throughout my work. Various external forces and self-discipline allow me to maintain a relative balance in this society. However getting out of balance is my daily routine, I acted out the unbalance by creating an environment that feels unsafe and conveys a sense of restlessness. That\u2019s out of balance. At the same time, the unbalanced state is not instantaneous, but continuous and imperceptible. I hope my works can always maintain a changing state, rather than a fixed structure and form. The question then is, will these seemingly unstable structures collapse? Maybe the status only holds just a show time, which can be a few tens of seconds or a very long time. But the process constantly grabs people\u2019s attention, and we never know at when the balance is tipped. Like my daily life, I don\u2019t know when it will be out of balance again.',
+    materials: 'Step motor, Acrylic, Metal',
+    dimensions: '0.4m x 0.4m x 1.2m',
+    year: '2023',
+    media: {
+      photo: [
+        { src: '../assets/projects/question-01.png', alt: '<− ? −> 1' },
+        { src: '../assets/projects/question-02.png', alt: '<− ? −> 2' },
+        { src: '../assets/projects/question-03.png', alt: '<− ? −> 3' },
+        { src: '../assets/projects/question-04.png', alt: '<− ? −> 4' },
+        { src: '../assets/projects/question-05.png', alt: '<− ? −> 5' },
+        { src: '../assets/projects/question-06.png', alt: '<− ? −> 6' },
+        { src: '../assets/projects/question-07.png', alt: '<− ? −> 7' },
+      ],
+      video: [
+        {
+          youtube: 'Y6NEbEu4q2Q',
+          poster: '../assets/projects/question-video-poster.png',
+          alt: '<− ? −> video',
+        },
+      ],
+    },
+  },
+  'urban-graffiti': {
+    slug: 'urban-graffiti',
+    title: 'urban graffiti',
+    statement:
+      'This is an installation of photography combined with screen printing for a period of two years. I documented the animal bodies and feces. I found them in New York City for two years. They are marked with coordinates and dates, and then presented through screen printings. And then go back to where they were found and recreated them.\n\nThis is the concept of urban graffiti, you can see it everywhere in New York City, but for a long time no one will clean up and deal with it, just like graffiti everywhere, everyone sees it but doesn\u2019t care.',
+    materials: 'Acrylic. Screenprint',
+    dimensions: '0.2m x 0.2m',
+    year: '2023',
+    media: {
+      photo: [
+        { src: '../assets/projects/urban-graffiti-cover.png', alt: 'urban graffiti cover' },
+        { src: '../assets/projects/urban-graffiti-01.png', alt: 'urban graffiti 1' },
+        { src: '../assets/projects/urban-graffiti-02.png', alt: 'urban graffiti 2' },
+        { src: '../assets/projects/urban-graffiti-03.png', alt: 'urban graffiti 3' },
+        { src: '../assets/projects/urban-graffiti-04.png', alt: 'urban graffiti 4' },
+        { src: '../assets/projects/urban-graffiti-05.png', alt: 'urban graffiti 5' },
+        { src: '../assets/projects/urban-graffiti-06.png', alt: 'urban graffiti 6' },
+        { src: '../assets/projects/urban-graffiti-07.png', alt: 'urban graffiti 7' },
+        { src: '../assets/projects/urban-graffiti-08.png', alt: 'urban graffiti 8' },
+        { src: '../assets/projects/urban-graffiti-09.png', alt: 'urban graffiti 9' },
+        { src: '../assets/projects/urban-graffiti-10.png', alt: 'urban graffiti 10' },
+      ],
+      video: [],
+    },
   },
   contact: {
     slug: 'contact',
