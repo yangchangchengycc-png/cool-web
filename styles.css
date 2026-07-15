@@ -481,6 +481,11 @@ body::before {
   bottom: 16.8%;
 }
 
+.scatter-item--letter {
+  top: 62%;
+  right: 28%;
+}
+
 .layout-detail {
   min-height: 100vh;
   min-height: 100svh;
@@ -1419,6 +1424,11 @@ body.project-lightbox-open > :not(.project-lightbox) {
   .scatter-item--graffiti {
     right: 8%;
     bottom: 18%;
+  }
+
+  .scatter-item--letter {
+    top: 72%;
+    right: 10%;
   }
 
   .work-roll {

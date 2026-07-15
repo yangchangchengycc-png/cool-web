@@ -34,13 +34,27 @@ window.PROJECT_PAGES = {
     slug: 'above-the-water',
     title: 'above the water',
     statement:
-      'An exploration of surface, reflection, and the distance between what is seen and what is submerged. The work holds the viewer at the threshold between clarity and obscurity.',
-    materials: 'TBD',
-    dimensions: 'TBD',
-    year: 'TBD',
+      'This project is about the combination of art and commerce. Under the age of rapid consumption, pure art is hard to be known and collected by the public. The theme of this work is to try to commercialize artistic sculpture.\n\nFrom the very beginning, the design of this sculpture tried to consider the multiple scenes, such as placing it on a panistone, implanting it in a wall, or in a table, or hanging it.\n\nConceptually, at the beginning, I wanted to build a device for synchronizing waves, transmitting the wave data of my hometown to the sculpture in real time, and controlling the waves through the servo motor to create a device that is similar to the waves of my hometown in real time. It is like we all live in different places on the earth but we all share the same moon.',
+    materials: 'Acrylic. Metal. Motor. Water. Concrete',
+    dimensions: '0.2m x 0.2m x 0.5m',
+    year: '2022',
     media: {
-      photo: [{ src: '../assets/projects/precarious-force-hero.jpg', alt: 'above the water placeholder' }],
-      video: [],
+      photo: [
+        { src: '../assets/projects/above-the-water-01.png', alt: 'above the water 1' },
+        { src: '../assets/projects/above-the-water-02.png', alt: 'above the water 2' },
+        { src: '../assets/projects/above-the-water-03.png', alt: 'above the water 3' },
+        { src: '../assets/projects/above-the-water-04.png', alt: 'above the water 4' },
+        { src: '../assets/projects/above-the-water-05.png', alt: 'above the water 5' },
+        { src: '../assets/projects/above-the-water-06.png', alt: 'above the water 6' },
+        { src: '../assets/projects/above-the-water-07.png', alt: 'above the water 7' },
+      ],
+      video: [
+        {
+          youtube: '5O99XGHt96A',
+          poster: '../assets/projects/above-the-water-01.png',
+          alt: 'above the water video',
+        },
+      ],
     },
   },
   exhibition: {
@@ -62,7 +76,11 @@ window.PROJECT_PAGES = {
     dimensions: 'TBD',
     year: 'TBD',
     media: {
-      photo: [{ src: '../assets/projects/precarious-force-hero.jpg', alt: 'nector placeholder' }],
+      photo: [
+        { src: '../assets/projects/nector-01.png', alt: 'nector 1' },
+        { src: '../assets/projects/nector-02.png', alt: 'nector 2' },
+        { src: '../assets/projects/nector-03.png', alt: 'nector 3' },
+      ],
       video: [],
     },
   },
@@ -98,7 +116,13 @@ window.PROJECT_PAGES = {
     dimensions: 'TBD',
     year: 'TBD',
     media: {
-      photo: [{ src: '../assets/projects/precarious-force-hero.jpg', alt: 'trees in the plastic boxes placeholder' }],
+      photo: [
+        { src: '../assets/projects/trees-in-the-plastic-boxes-01.png', alt: 'trees in the plastic boxes 1' },
+        { src: '../assets/projects/trees-in-the-plastic-boxes-02.png', alt: 'trees in the plastic boxes 2' },
+        { src: '../assets/projects/trees-in-the-plastic-boxes-03.png', alt: 'trees in the plastic boxes 3' },
+        { src: '../assets/projects/trees-in-the-plastic-boxes-04.png', alt: 'trees in the plastic boxes 4' },
+        { src: '../assets/projects/trees-in-the-plastic-boxes-05.png', alt: 'trees in the plastic boxes 5' },
+      ],
       video: [],
     },
   },
@@ -153,6 +177,15 @@ window.PROJECT_PAGES = {
       ],
       video: [],
     },
+  },
+  'moms-letter': {
+    slug: 'moms-letter',
+    title: 'mom\u2019s letter',
+    statement: 'Documentation coming soon.',
+    materials: 'TBD',
+    dimensions: 'TBD',
+    year: 'TBD',
+    media: { photo: [], video: [] },
   },
   contact: {
     slug: 'contact',
