@@ -185,7 +185,16 @@ window.PROJECT_PAGES = {
     materials: 'TBD',
     dimensions: 'TBD',
     year: 'TBD',
-    media: { photo: [], video: [] },
+    media: {
+      photo: [
+        { src: '../assets/projects/moms-letter-01.png', alt: 'mom\u2019s letter 1' },
+        { src: '../assets/projects/moms-letter-02.png', alt: 'mom\u2019s letter 2' },
+        { src: '../assets/projects/moms-letter-03.png', alt: 'mom\u2019s letter 3' },
+        { src: '../assets/projects/moms-letter-04.png', alt: 'mom\u2019s letter 4' },
+        { src: '../assets/projects/moms-letter-05.png', alt: 'mom\u2019s letter 5' },
+      ],
+      video: [],
+    },
   },
   contact: {
     slug: 'contact',
