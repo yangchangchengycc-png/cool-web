@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a3a2a">
+  <title>Dinner Invitation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="invite.css">
+</head>
+<body>
+  <div class="phone" id="app">
+    <div class="atmosphere" aria-hidden="true">
+      <div class="court-lines"></div>
+      <div class="vignette"></div>
+    </div>
+
+    <!-- Screen: Start -->
+    <section class="screen is-active" data-screen="start" aria-label="开始">
+      <div class="screen__inner">
+        <p class="eyebrow">Lawn &amp; Candlelight</p>
+        <h1 class="brand">COURT<br>SIDE</h1>
+        <p class="lede">一场安静的晚餐邀请</p>
+        <button type="button" class="btn btn--primary" data-action="go-choice">
+          <span>开始</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Screen: Willing? -->
+    <section class="screen" data-screen="choice" aria-label="是否愿意">
+      <div class="screen__inner screen__inner--choice">
+        <p class="eyebrow">Question</p>
+        <h2 class="headline">愿意与我一起吃饭吗？</h2>
+        <p class="sub">请认真选择</p>
+        <div class="choice-stage" id="choice-stage">
+          <button type="button" class="btn btn--yes" data-action="go-food" id="btn-yes">愿意</button>
+          <button type="button" class="btn btn--no" id="btn-no" aria-label="不愿意">不愿意</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen: Food -->
+    <section class="screen" data-screen="food" aria-label="美食选择">
+      <div class="screen__inner">
+        <p class="eyebrow">Cuisine</p>
+        <h2 class="headline">想吃什么？</h2>
+        <p class="sub">选一种今晚的味道</p>
+        <div class="food-grid" id="food-grid" role="listbox" aria-label="美食类型"></div>
+      </div>
+    </section>
+
+    <!-- Screen: Date -->
+    <section class="screen" data-screen="date" aria-label="日期时间">
+      <div class="screen__inner">
+        <p class="eyebrow">When</p>
+        <h2 class="headline">什么时候见？</h2>
+        <p class="sub">周六或周日，晚 8 点之后</p>
+
+        <div class="date-block">
+          <p class="field-label">日期</p>
+          <div class="chip-row" id="day-row" role="radiogroup" aria-label="选择日期"></div>
+        </div>
+
+        <div class="date-block">
+          <p class="field-label">时间</p>
+          <div class="chip-row chip-row--wrap" id="time-row" role="radiogroup" aria-label="选择时间"></div>
+        </div>
+
+        <button type="button" class="btn btn--primary" id="btn-confirm" disabled>
+          <span>确认约会</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Screen: Finale -->
+    <section class="screen" data-screen="finale" aria-label="期待见面">
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+      <div class="screen__inner screen__inner--finale">
+        <p class="eyebrow">Confirmed</p>
+        <h2 class="headline headline--finale">期待与你见面</h2>
+        <p class="summary" id="summary"></p>
+        <p class="finale-note" id="finale-note">今晚的灯光会更温柔一点</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="invite.js"></script>
+</body>
+</html>
