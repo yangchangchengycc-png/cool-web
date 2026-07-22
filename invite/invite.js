@@ -1,15 +1,12 @@
 (() => {
   const FOODS = [
-    { zh: "法餐", en: "French" },
     { zh: "日料", en: "Japanese" },
-    { zh: "意式", en: "Italian" },
-    { zh: "牛排", en: "Steakhouse" },
-    { zh: "海鲜", en: "Seafood" },
-    { zh: "粤菜", en: "Cantonese" },
     { zh: "火锅", en: "Hotpot" },
-    { zh: "泰餐", en: "Thai" },
-    { zh: "地中海", en: "Mediterranean" },
-    { zh: "精致小食", en: "Small Plates" },
+    { zh: "韩餐", en: "Korean" },
+    { zh: "烤肉", en: "BBQ" },
+    { zh: "杭帮菜", en: "Hangzhou" },
+    { zh: "川菜", en: "Sichuan" },
+    { zh: "西餐", en: "Western" },
   ];
 
   const DAYS = [
