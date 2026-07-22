@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="invite.css?v=20260722-share">
+  <link rel="stylesheet" href="invite.css?v=20260722-shot">
 </head>
 <body>
   <div class="phone" id="app">
@@ -85,8 +85,12 @@
         <p class="summary" id="summary"></p>
         <p class="finale-note" id="finale-note">今晚的灯光会更温柔一点</p>
         <div class="share-panel" id="share-panel" hidden>
+          <div class="shot-wrap">
+            <img id="invite-shot" class="invite-shot" alt="约会确认截图" />
+          </div>
+          <p class="share-hint">长按图片保存，发给 TA</p>
           <button type="button" class="btn btn--primary" id="btn-share">
-            <span>发送给 TA</span>
+            <span>保存图片</span>
           </button>
           <p class="share-status" id="share-status" aria-live="polite"></p>
         </div>
@@ -94,6 +98,6 @@
     </section>
   </div>
 
-  <script src="invite.js?v=20260722-share"></script>
+  <script src="invite.js?v=20260722-shot"></script>
 </body>
 </html>

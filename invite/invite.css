@@ -411,7 +411,7 @@ body {
 }
 
 .share-panel {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   opacity: 0;
   transform: translateY(14px);
   transition:
@@ -428,6 +428,31 @@ body {
   display: none;
 }
 
+.shot-wrap {
+  margin: 0 auto 0.85rem;
+  width: min(100%, 280px);
+  border: 1px solid rgba(201, 184, 150, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  background: #13261c;
+  overflow: hidden;
+}
+
+.invite-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-touch-callout: default;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.share-hint {
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: var(--ivory-soft);
+}
+
 .share-panel #btn-share {
   width: min(100%, 220px);
   animation: none;
@@ -439,6 +464,17 @@ body {
   font-size: 0.78rem;
   letter-spacing: 0.12em;
   color: var(--champagne);
+}
+
+.screen__inner--finale.is-sharing .headline--finale,
+.screen__inner--finale.is-sharing .summary,
+.screen__inner--finale.is-sharing .finale-note,
+.screen__inner--finale.is-sharing .eyebrow {
+  display: none;
+}
+
+.screen__inner--finale.is-sharing {
+  justify-content: center;
 }
 
 @keyframes rise {
