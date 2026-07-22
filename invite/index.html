@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="invite.css">
+  <link rel="stylesheet" href="invite.css?v=20260722-share">
 </head>
 <body>
   <div class="phone" id="app">
@@ -84,10 +84,16 @@
         <h2 class="headline headline--finale">期待与你见面</h2>
         <p class="summary" id="summary"></p>
         <p class="finale-note" id="finale-note">今晚的灯光会更温柔一点</p>
+        <div class="share-panel" id="share-panel" hidden>
+          <button type="button" class="btn btn--primary" id="btn-share">
+            <span>发送给 TA</span>
+          </button>
+          <p class="share-status" id="share-status" aria-live="polite"></p>
+        </div>
       </div>
     </section>
   </div>
 
-  <script src="invite.js?v=20260722-cuisine"></script>
+  <script src="invite.js?v=20260722-share"></script>
 </body>
 </html>

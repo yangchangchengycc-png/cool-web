@@ -410,6 +410,37 @@ body {
   animation: rise 1s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.share-panel {
+  margin-top: 2rem;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.share-panel.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.share-panel[hidden] {
+  display: none;
+}
+
+.share-panel #btn-share {
+  width: min(100%, 220px);
+  animation: none;
+}
+
+.share-status {
+  margin-top: 0.85rem;
+  min-height: 1.2em;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--champagne);
+}
+
 @keyframes rise {
   from {
     opacity: 0;

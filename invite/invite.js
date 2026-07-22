@@ -39,6 +39,9 @@
   const btnConfirm = document.getElementById("btn-confirm");
   const summary = document.getElementById("summary");
   const finaleNote = document.getElementById("finale-note");
+  const sharePanel = document.getElementById("share-panel");
+  const btnShare = document.getElementById("btn-share");
+  const shareStatus = document.getElementById("share-status");
   const canvas = document.getElementById("fireworks");
   const ctx = canvas.getContext("2d");
 
@@ -47,6 +50,8 @@
   let particles = [];
   let rockets = [];
   let lastBurst = 0;
+  let fireworksActive = false;
+  let shareRevealTimer = null;
 
   function goTo(name) {
     if (!screens[name] || name === currentScreen) return;
@@ -230,6 +235,92 @@
     goTo("finale");
   });
 
+  function buildInviteMessage() {
+    const food = state.food ? state.food.zh : "待定";
+    const when =
+      state.day && state.time ? `${state.day.label} ${state.time}` : "待定";
+    return [
+      "约会确认 ✓",
+      `菜品：${food}`,
+      `时间：${when}`,
+      "",
+      "期待与你见面",
+    ].join("\n");
+  }
+
+  function setShareStatus(text) {
+    if (shareStatus) shareStatus.textContent = text;
+  }
+
+  async function copyInviteMessage(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    document.body.removeChild(area);
+  }
+
+  async function sendInviteSummary() {
+    const text = buildInviteMessage();
+    setShareStatus("");
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "约会确认",
+          text,
+        });
+        setShareStatus("已打开分享，发给 TA 吧");
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") {
+          setShareStatus("已取消分享");
+          return;
+        }
+      }
+    }
+
+    try {
+      await copyInviteMessage(text);
+      setShareStatus("已复制约会信息，去微信粘贴发给 TA");
+    } catch {
+      setShareStatus("复制失败，请手动发送摘要信息");
+    }
+  }
+
+  function revealSharePanel() {
+    if (!sharePanel) return;
+    sharePanel.hidden = false;
+    requestAnimationFrame(() => {
+      sharePanel.classList.add("is-visible");
+    });
+  }
+
+  function resetSharePanel() {
+    if (!sharePanel) return;
+    sharePanel.classList.remove("is-visible");
+    sharePanel.hidden = true;
+    setShareStatus("");
+    if (shareRevealTimer) {
+      clearTimeout(shareRevealTimer);
+      shareRevealTimer = null;
+    }
+  }
+
+  if (btnShare) {
+    btnShare.addEventListener("click", () => {
+      sendInviteSummary();
+    });
+  }
+
   function renderSummary() {
     const food = state.food ? `${state.food.zh} · ${state.food.en}` : "";
     const when = state.day && state.time ? `${state.day.label} ${state.time}` : "";
@@ -289,21 +380,30 @@
     particles = [];
     rockets = [];
     lastBurst = performance.now();
+    fireworksActive = true;
+    resetSharePanel();
     if (fireworksAnim) cancelAnimationFrame(fireworksAnim);
+
+    const startedAt = performance.now();
+    const FIREWORKS_MS = 4200;
 
     const tick = (now) => {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
 
-      if (now - lastBurst > 550 + Math.random() * 400) {
+      if (fireworksActive && now - lastBurst > 550 + Math.random() * 400) {
         spawnRocket();
         lastBurst = now;
       }
 
-      // occasional ground sparkle
-      if (Math.random() < 0.03) {
+      if (fireworksActive && Math.random() < 0.03) {
         burst(w * Math.random(), h * (0.25 + Math.random() * 0.35), 42 + Math.random() * 30);
+      }
+
+      if (fireworksActive && now - startedAt > FIREWORKS_MS) {
+        fireworksActive = false;
+        revealSharePanel();
       }
 
       for (let i = rockets.length - 1; i >= 0; i--) {
@@ -351,7 +451,6 @@
       fireworksAnim = requestAnimationFrame(tick);
     };
 
-    // opening burst
     setTimeout(() => {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
